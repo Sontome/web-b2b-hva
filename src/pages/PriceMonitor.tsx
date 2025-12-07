@@ -627,7 +627,7 @@ export default function PriceMonitor() {
       }
 
       const newPrice = parseInt(matchingFlight["thông_tin_chung"]?.giá_vé || "0");
-      const oldPrice = flight.current_price;
+      const oldPrice = flight.current_price -5000;
       const bookingKeyDeparture = matchingFlight["chiều_đi"]?.BookingKey || matchingFlight["chiều_đi"]?.booking_key;
       const bookingKeyReturn = flight.is_round_trip
         ? matchingFlight["chiều_về"]?.BookingKey || matchingFlight["chiều_về"]?.booking_key
@@ -1079,8 +1079,8 @@ export default function PriceMonitor() {
       throw new Error("Không có thông tin chặng bay");
     }
 
-    // Check if old PNR is already issued (only if perm_check_vna_issued is enabled)
-    if (profile?.perm_check_vna_issued && flight.pnr) {
+    // Always check old PNR payment status first (regardless of perm_check_vna_issued setting)
+    if (flight.pnr) {
       try {
         const checkPnrResponse = await fetch(`https://thuhongtour.com/checkvechoVNA?pnr=${flight.pnr}`, {
           method: 'GET',
@@ -1089,36 +1089,125 @@ export default function PriceMonitor() {
         
         if (checkPnrResponse.ok) {
           const pnrData = await checkPnrResponse.json();
-          if (pnrData && pnrData.paymentstatus === true) {
-            console.log("Old VNA PNR is already issued, not holding new ticket");
-            toast({
-              title: "PNR cũ đã xuất vé",
-              description: `PNR ${flight.pnr} đã được xuất vé, không giữ vé mới`,
-            });
+          
+          // Case 1: Old PNR is NOT issued (paymentstatus != true) -> Call reprice API instead of holding new ticket
+          if (!pnrData || pnrData.paymentstatus !== true) {
+            console.log("Old VNA PNR not issued, calling reprice API instead of holding new ticket");
             
-            // Delete from monitored_flights
-            const { error: deleteError } = await supabase
-              .from("monitored_flights")
-              .delete()
-              .eq("id", flight.id);
-
-            if (deleteError) {
-              console.error("Error deleting flight from monitoring:", deleteError);
-            } else {
-              console.log("VNA flight removed from monitoring");
-              toast({
-                title: "Đã xóa hành trình",
-                description: "Hành trình đã được xóa khỏi danh sách theo dõi",
+            // Get ticket class from first segment
+            const ticketClass = segments[0]?.ticket_class || 'VFR';
+            
+            try {
+              const repriceResponse = await fetch(`https://thuhongtour.com/reprice?pnr=${flight.pnr}&doituong=${ticketClass}`, {
+                method: 'GET',
+                headers: { accept: 'application/json' }
               });
+              
+              if (repriceResponse.ok) {
+                const repriceData = await repriceResponse.json();
+                
+                // Check if reprice was successful (has pricegoc and pricemoi)
+                if (repriceData && repriceData.pricegoc && repriceData.pricemoi) {
+                  console.log("Reprice successful:", repriceData);
+                  
+                  // Send Telegram notification about successful reprice
+                  if (profile?.apikey_telegram && profile?.idchat_telegram) {
+                    const segment1 = segments[0];
+                    const telegramMessage = `✅ Đã reprice PNR ${flight.pnr} thành công!\n\nHành trình: ${segment1.departure_airport} → ${segment1.arrival_airport}\nNgày bay: ${segment1.departure_date}`;
+                    fetch(`https://api.telegram.org/bot${profile.apikey_telegram}/sendMessage`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        chat_id: profile.idchat_telegram,
+                        text: telegramMessage,
+                      }),
+                    }).catch(e => console.log('Could not send Telegram notification:', e));
+                  }
+                  
+                  toast({
+                    title: "Đã reprice PNR thành công! 🎉",
+                    description: `PNR ${flight.pnr} đã được reprice. Hành trình đã được xóa khỏi danh sách theo dõi.`,
+                    className: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
+                  });
+                  
+                  // Delete from monitored_flights
+                  const { error: deleteError } = await supabase
+                    .from("monitored_flights")
+                    .delete()
+                    .eq("id", flight.id);
+
+                  if (deleteError) {
+                    console.error("Error deleting flight from monitoring:", deleteError);
+                  }
+                  
+                  await fetchMonitoredFlights();
+                  return;
+                } else {
+                  console.log("Reprice failed - missing pricegoc or pricemoi:", repriceData);
+                  throw new Error("Reprice không thành công");
+                }
+              } else {
+                throw new Error(`Reprice HTTP error: ${repriceResponse.status}`);
+              }
+            } catch (repriceError) {
+              console.error("Error calling reprice API:", repriceError);
+              // Send Telegram notification about reprice failure
+              if (profile?.apikey_telegram && profile?.idchat_telegram) {
+                const failMessage = `⚠️ Reprice PNR ${flight.pnr} thất bại, hãy kiểm tra thủ công`;
+                fetch(`https://api.telegram.org/bot${profile.apikey_telegram}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chat_id: profile.idchat_telegram,
+                    text: failMessage,
+                  }),
+                }).catch(e => console.log('Could not send failure notification:', e));
+              }
+              throw repriceError;
             }
-            
-            await fetchMonitoredFlights();
-            return;
+          }
+          
+          // Case 2: Old PNR IS issued (paymentstatus = true)
+          if (pnrData.paymentstatus === true) {
+            // Check perm_check_vna_issued setting
+            if (profile?.perm_check_vna_issued) {
+              // Setting ON: Don't hold new ticket, just delete from monitoring
+              console.log("Old VNA PNR is already issued, not holding new ticket (perm_check_vna_issued = ON)");
+              toast({
+                title: "PNR cũ đã xuất vé",
+                description: `PNR ${flight.pnr} đã được xuất vé, không giữ vé mới`,
+              });
+              
+              // Delete from monitored_flights
+              const { error: deleteError } = await supabase
+                .from("monitored_flights")
+                .delete()
+                .eq("id", flight.id);
+
+              if (deleteError) {
+                console.error("Error deleting flight from monitoring:", deleteError);
+              } else {
+                console.log("VNA flight removed from monitoring");
+                toast({
+                  title: "Đã xóa hành trình",
+                  description: "Hành trình đã được xóa khỏi danh sách theo dõi",
+                });
+              }
+              
+              await fetchMonitoredFlights();
+              return;
+            }
+            // Setting OFF: Continue to hold new ticket (existing flow below)
+            console.log("Old VNA PNR is issued but perm_check_vna_issued = OFF, proceeding to hold new ticket");
           }
         }
       } catch (checkError) {
         console.error("Error checking old VNA PNR status:", checkError);
-        // Continue with holding process if check fails
+        // If it's a reprice error, rethrow it
+        if (checkError instanceof Error && checkError.message.includes('Reprice')) {
+          throw checkError;
+        }
+        // Continue with holding process if check fails for other reasons
       }
     }
 
@@ -1253,7 +1342,6 @@ export default function PriceMonitor() {
 
     // Send Telegram notification for successful auto-hold
     if (profile?.apikey_telegram && profile?.idchat_telegram) {
-      const segment1 = segments[0];
       const telegramMessage = `✅ Đã tự động giữ vé VNA thành công!\n\nPNR mới: ${data.pnr}\nHành trình: ${segment1.departure_airport} → ${segment1.arrival_airport}\nNgày bay: ${segment1.departure_date}${segment2 ? `\nNgày về: ${segment2.departure_date}` : ''}`;
       fetch(`https://api.telegram.org/bot${profile.apikey_telegram}/sendMessage`, {
         method: 'POST',
