@@ -357,8 +357,10 @@ export default function HeldTickets() {
           departure_time: exactTimeMatch ? segments[0].giocatcanh : null,
           check_interval_minutes: 5,
           is_active: true,
+          auto_hold_enabled: true,
           ticket_class: segments[0].doituong || "ADT",
           pnr: selectedPnr,
+          reprice_pnr: selectedPnr, // Save original PNR for reprice
         };
 
         if (segments.length === 2) {
@@ -470,6 +472,7 @@ export default function HeldTickets() {
         departure_time: exactTimeMatch ? data.chieudi.giocatcanh : null,
         check_interval_minutes: 5,
         is_active: true,
+        auto_hold_enabled: true,
         ticket_class: data.chieudi.loaive === "ECO" ? "economy" : "business",
         pnr: selectedPnr,
       };

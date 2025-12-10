@@ -69,6 +69,7 @@ export type Database = {
           last_checked_at: string | null
           passengers: Json | null
           pnr: string | null
+          reprice_pnr: string | null
           return_date: string | null
           return_time: string | null
           segments: Json | null
@@ -94,6 +95,7 @@ export type Database = {
           last_checked_at?: string | null
           passengers?: Json | null
           pnr?: string | null
+          reprice_pnr?: string | null
           return_date?: string | null
           return_time?: string | null
           segments?: Json | null
@@ -119,6 +121,7 @@ export type Database = {
           last_checked_at?: string | null
           passengers?: Json | null
           pnr?: string | null
+          reprice_pnr?: string | null
           return_date?: string | null
           return_time?: string | null
           segments?: Json | null
