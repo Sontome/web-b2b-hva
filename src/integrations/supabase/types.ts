@@ -218,6 +218,27 @@ export type Database = {
         }
         Relationships: []
       }
+      search_logs: {
+        Row: {
+          id: string
+          search_data: Json | null
+          searched_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          search_data?: Json | null
+          searched_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          search_data?: Json | null
+          searched_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

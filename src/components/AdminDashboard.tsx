@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { SearchStatistics } from './SearchStatistics';
 
 interface Profile {
   id: string;
@@ -339,6 +340,11 @@ export const AdminDashboard = () => {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Search Statistics */}
+        <div className="mb-8">
+          <SearchStatistics />
         </div>
 
         {/* Users Table */}

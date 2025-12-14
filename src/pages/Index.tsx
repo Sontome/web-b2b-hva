@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ArrowUp, Mail, Wrench, ShoppingBasket, TrendingDown } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { TopNavbar } from '@/components/TopNavbar';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -201,6 +202,19 @@ export default function Index() {
         description: "Tính năng tìm vé Vietnam Airlines đã bị khóa. Vui lòng liên hệ admin.",
         variant: "destructive",
       });
+    }
+
+    // Log search action to database
+    if (profile?.id) {
+      supabase
+        .from('search_logs')
+        .insert([{
+          user_id: profile.id,
+          search_data: searchData as any
+        }])
+        .then(({ error }) => {
+          if (error) console.error('Error logging search:', error);
+        });
     }
 
     setLoading(true);
