@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect  } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,7 +56,29 @@ export const VNABookingModal = ({
   const [doiTuong, setDoiTuong] = useState<'VFR' | 'ADT' | 'STU'>('VFR');
   const [isLoading, setIsLoading] = useState(false);
   const [successData, setSuccessData] = useState<{ pnr: string } | null>(null);
+  const [ticketEmail, setTicketEmail] = useState("");
+  const [ticketPhone, setTicketPhone] = useState("");
+  // Load user profile data on mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("ticket_email, ticket_phone")
+          .eq("id", user.id)
+          .single();
 
+        if (profile) {
+          setTicketEmail(profile.ticket_email || "");
+          setTicketPhone(profile.ticket_phone || "");
+        }
+      }
+    };
+    loadProfile();
+  }, []);
   // Remove Vietnamese diacritics
   // Convert date from "24/04/2026" to "24APR"
   const formatDateForAPI = (dateStr: string) => {
@@ -165,6 +187,25 @@ export const VNABookingModal = ({
   const handleSubmit = async () => {
     try {
       // Validate
+      
+      if (!ticketEmail || !ticketEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        throw new Error("Vui lòng nhập địa chỉ email hợp lệ");
+      }
+      if (!ticketPhone || !ticketPhone.match(/^\+\d{10,15}$/)) {
+        throw new Error("Vui lòng nhập số điện thoại hợp lệ (ví dụ: +840764301092)");
+      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user && (ticketEmail || ticketPhone)) {
+        await supabase
+          .from("profiles")
+          .update({
+            ticket_email: ticketEmail,
+            ticket_phone: ticketPhone,
+          })
+          .eq("id", user.id);
+      }
       for (const passenger of passengers) {
         if (!passenger.Họ.trim() || !passenger.Tên.trim()) {
           throw new Error("Vui lòng điền đầy đủ thông tin hành khách");
@@ -176,6 +217,7 @@ export const VNABookingModal = ({
           }
         }
       }
+      
 
       // Build URL with query params
       const params = new URLSearchParams();
@@ -188,6 +230,10 @@ export const VNABookingModal = ({
       if (flightInfo.tripType === 'RT' && flightInfo.arrdate && flightInfo.arrtime) {
         params.append('arrdate', formatDateForAPI(flightInfo.arrdate));
         params.append('arrtime', flightInfo.arrtime.replace(':', ''));
+      }
+      if (ticketEmail && ticketPhone) {
+        params.append('email', ticketEmail);
+        params.append('phone', ticketPhone);
       }
       
       params.append('doituong', doiTuong);
@@ -426,7 +472,32 @@ export const VNABookingModal = ({
             <Button variant="outline" onClick={addPassenger} className="w-full">
               <Plus className="w-4 h-4 mr-2" /> Thêm hành khách
             </Button>
-
+             {/* Contact fields for ticket sending */}
+            <div className="border rounded-lg p-4 space-y-4 bg-blue-50/50">
+              <h3 className="font-semibold text-sm">Thông tin gửi mặt vé</h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label>Email gửi mặt vé *</Label>
+                  <Input
+                    type="email"
+                    value={ticketEmail}
+                    onChange={(e) => setTicketEmail(e.target.value)}
+                    placeholder="xxxxxx@gmail.com"
+                  />
+                </div>
+                <div>
+                  <Label>Số điện thoại gửi mặt vé *</Label>
+                  <Input
+                    value={ticketPhone}
+                    onChange={(e) => setTicketPhone(e.target.value)}
+                    placeholder="+84xxxxxx hoặc +82xxxxxxx"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Nhập số điện thoại có mã vùng (ví dụ: +84 cho Việt Nam, +82 cho Hàn Quốc)
+                  </p>
+                </div>
+              </div>
+            </div>
             <Button className="w-full" onClick={handleSubmit} disabled={isLoading}>
               {isLoading ? 'Đang giữ vé...' : 'Giữ vé ngay'}
             </Button>
