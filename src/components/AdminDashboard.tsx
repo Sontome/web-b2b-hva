@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { SearchStatistics } from './SearchStatistics';
-
+import { Textarea } from "@/components/ui/textarea"
 interface Profile {
   id: string;
   email: string;
@@ -555,25 +555,17 @@ export const AdminDashboard = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                  <Label htmlFor="banner">Banner (URL hình ảnh)</Label>
-                                  <Input
+                                  <Label htmlFor="banner">Banner đại lý (text)</Label>
+                                  <Textarea
                                     id="banner"
                                     value={editForm.banner}
-                                    onChange={(e) => setEditForm(prev => ({ ...prev, banner: e.target.value }))}
-                                    placeholder="Nhập URL banner của đại lý"
+                                    onChange={(e) =>
+                                      setEditForm(prev => ({ ...prev, banner: e.target.value }))
+                                    }
+                                    placeholder="Nhập nội dung banner, Enter để xuống dòng"
+                                    rows={4}
                                   />
-                                  {editForm.banner && (
-                                    <div className="mt-2">
-                                      <img 
-                                        src={editForm.banner} 
-                                        alt="Banner preview" 
-                                        className="max-h-32 rounded-md object-cover"
-                                        onError={(e) => {
-                                          (e.target as HTMLImageElement).style.display = 'none';
-                                        }}
-                                      />
-                                    </div>
-                                  )}
+                                  
                                 </div>
                               </div>
                               <div className="space-y-2">
