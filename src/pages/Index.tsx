@@ -178,12 +178,25 @@ export default function Index() {
 
     // If no permissions at all, show error and return
     if (!canCheckVJ && !canCheckVNA) {
-      const errorMsg = 'Tính năng tìm kiếm chuyến bay đã bị khóa. Vui lòng liên hệ admin để được cấp quyền.';
+      const errorMsg = 'Tính năng tìm kiếm chuyến bay đã bị khóa.';
       console.log('BLOCKING SEARCH - No permissions:', errorMsg);
       setError(errorMsg);
       toast({
-        title: "Không có quyền truy cập",
-        description: errorMsg,
+        title: "Thông báo",
+        description: (
+        <span>
+          Vui lòng liên hệ{' '}
+          <a
+            href="https://zalo.me/821035463396"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline font-semibold"
+          >
+            Zalo Admin
+          </a>{' '}
+          để được cấp quyền
+        </span>
+      ),
         variant: "destructive",
       });
       return;
@@ -191,16 +204,48 @@ export default function Index() {
 
     // Show toast for locked features
     if (!canCheckVJ) {
+      const errorMsg = 'Tính năng tìm kiếm chuyến bay VJ đã bị khóa.';
+      console.log('BLOCKING SEARCH - No permissions:', errorMsg);
+      setError(errorMsg);
       toast({
         title: "Thông báo",
-        description: "Tính năng tìm vé VietJet đã bị khóa. Vui lòng liên hệ admin.",
+        description: (
+          <span>
+            Vui lòng liên hệ{' '}
+            <a
+              href="https://zalo.me/821035463396"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline font-semibold"
+            >
+              Zalo Admin
+            </a>{' '}
+            để được cấp quyền kiểm tra vé VJ
+          </span>
+        ),
         variant: "destructive",
       });
     }
     if (!canCheckVNA) {
+      const errorMsg = 'Tính năng tìm kiếm chuyến bay VNA đã bị khóa.';
+      console.log('BLOCKING SEARCH - No permissions:', errorMsg);
+      setError(errorMsg);
       toast({
         title: "Thông báo",
-        description: "Tính năng tìm vé Vietnam Airlines đã bị khóa. Vui lòng liên hệ admin.",
+        description: (
+          <span>
+            Vui lòng liên hệ{' '}
+            <a
+              href="https://zalo.me/821035463396"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline font-semibold"
+            >
+              Zalo Admin
+            </a>{' '}
+            để được cấp quyền kiểm tra vé VNA
+          </span>
+        ),
         variant: "destructive",
       });
     }
