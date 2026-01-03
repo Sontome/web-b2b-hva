@@ -821,7 +821,7 @@ export default function PriceMonitor() {
               const reCheckData = await reCheckResponse.json();
               console.log("Re-check PNR Response:", reCheckData);
 
-              const newPrice = reCheckData.tongbillgiagoc || reCheckData.giavegoc || 0;
+              const newPrice =  reCheckData.giavegoc ||reCheckData.tongbillgiagoc || 0;
               
               // Check if price dropped more than 5000
               if (oldPrice && oldPrice > 0 && newPrice > 0 && (oldPrice - newPrice) > 5000) {
