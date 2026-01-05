@@ -14,6 +14,7 @@ import { VJTicketModal } from '@/components/VJTicketModal';
 import { VNATicketModal } from '@/components/VNATicketModal';
 import { BookingModal as VJBookingModal } from '@/components/VJBookingModal';
 import { VNABookingModal } from '@/components/VNABookingModal';
+import { RepriceModal } from '@/components/RepriceModal';
 import { InkSplashEffect } from '@/components/InkSplashEffect';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowUp, Mail, Wrench, ShoppingBasket, TrendingDown } from 'lucide-react';
@@ -47,6 +48,7 @@ export default function Index() {
   const [showVNATicketModal, setShowVNATicketModal] = useState(false);
   const [showVJBookingModal, setShowVJBookingModal] = useState(false);
   const [showVNABookingModal, setShowVNABookingModal] = useState(false);
+  const [showRepriceModal, setShowRepriceModal] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
   const [ticketPNR, setTicketPNR] = useState<string | undefined>(undefined);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -197,6 +199,7 @@ export default function Index() {
           để được cấp quyền
         </span>
       ),
+        
         variant: "destructive",
         duration: 10000,
       });
@@ -453,6 +456,7 @@ export default function Index() {
             onShowEmailModal={() => setIsEmailModalOpen(true)}
             onShowVJTicketModal={() => setShowVJTicketModal(true)}
             onShowVNATicketModal={() => setShowVNATicketModal(true)}
+            onShowRepriceModal={() => setShowRepriceModal(true)}
           />
 
           {/* Hero Banner with Background Image */}
@@ -568,6 +572,10 @@ export default function Index() {
               setTicketPNR(undefined);
             }}
             initialPNR={ticketPNR}
+          />
+          <RepriceModal
+            isOpen={showRepriceModal}
+            onClose={() => setShowRepriceModal(false)}
           />
           {selectedFlight?.airline === 'VJ' && selectedFlight?.bookingKey && (
             <VJBookingModal
