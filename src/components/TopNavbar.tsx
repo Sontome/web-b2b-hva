@@ -18,6 +18,7 @@ interface TopNavbarProps {
   onShowEmailModal?: () => void;
   onShowVJTicketModal?: () => void;
   onShowVNATicketModal?: () => void;
+  onShowRepriceModal?: () => void;
 }
 
 export const TopNavbar = ({
@@ -25,6 +26,7 @@ export const TopNavbar = ({
   onShowEmailModal,
   onShowVJTicketModal,
   onShowVNATicketModal,
+  onShowRepriceModal,
 }: TopNavbarProps) => {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -70,7 +72,7 @@ export const TopNavbar = ({
                 <span className="hidden sm:inline">Giỏ hàng</span>
               </Button>
             )}
-            {(profile?.perm_get_ticket_image || profile?.perm_send_ticket || profile?.perm_get_pending_ticket) && (
+            {(profile?.perm_get_ticket_image || profile?.perm_send_ticket || profile?.perm_get_pending_ticket || (profile as any)?.perm_reprice) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -107,6 +109,11 @@ export const TopNavbar = ({
                         </DropdownMenuItem>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
+                  )}
+                  {(profile as any)?.perm_reprice && onShowRepriceModal && (
+                    <DropdownMenuItem onClick={onShowRepriceModal}>
+                      Reprice VNA
+                    </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
