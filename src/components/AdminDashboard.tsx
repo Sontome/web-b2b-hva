@@ -37,6 +37,7 @@ interface Profile {
   perm_get_pending_ticket: boolean;
   perm_check_discount: boolean;
   perm_check_vna_issued: boolean;
+  perm_reprice: boolean;
   hold_ticket_quantity: number;
   apikey_telegram: string | null;
   idchat_telegram: string | null;
@@ -72,6 +73,7 @@ export const AdminDashboard = () => {
     perm_get_pending_ticket: false,
     perm_check_discount: false,
     perm_check_vna_issued: false,
+    perm_reprice: false,
     hold_ticket_quantity: 0,
     apikey_telegram: '',
     idchat_telegram: '',
@@ -154,6 +156,7 @@ export const AdminDashboard = () => {
       perm_get_pending_ticket: profile.perm_get_pending_ticket || false,
       perm_check_discount: profile.perm_check_discount || false,
       perm_check_vna_issued: profile.perm_check_vna_issued || false,
+      perm_reprice: (profile as any).perm_reprice || false,
       hold_ticket_quantity: profile.hold_ticket_quantity || 0,
       apikey_telegram: profile.apikey_telegram || '',
       idchat_telegram: profile.idchat_telegram || '',
@@ -193,6 +196,7 @@ export const AdminDashboard = () => {
           perm_get_pending_ticket: editForm.perm_get_pending_ticket,
           perm_check_discount: editForm.perm_check_discount,
           perm_check_vna_issued: editForm.perm_check_vna_issued,
+          perm_reprice: editForm.perm_reprice,
           hold_ticket_quantity: editForm.hold_ticket_quantity,
           perm_hold_ticket: permHoldTicket,
           apikey_telegram: editForm.apikey_telegram || null,
@@ -717,6 +721,15 @@ export const AdminDashboard = () => {
                                     id="perm_check_vna_issued"
                                     checked={editForm.perm_check_vna_issued}
                                     onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, perm_check_vna_issued: checked }))}
+                                  />
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <Label htmlFor="perm_reprice">Reprice VNA</Label>
+                                  <Switch
+                                    id="perm_reprice"
+                                    checked={editForm.perm_reprice}
+                                    onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, perm_reprice: checked }))}
                                   />
                                 </div>
 
