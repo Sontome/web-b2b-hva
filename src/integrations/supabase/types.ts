@@ -151,6 +151,7 @@ export type Database = {
           perm_get_pending_ticket: boolean | null
           perm_get_ticket_image: boolean | null
           perm_hold_ticket: boolean | null
+          perm_reprice: boolean | null
           perm_send_ticket: boolean | null
           phone: string | null
           price_markup: number | null
@@ -184,6 +185,7 @@ export type Database = {
           perm_get_pending_ticket?: boolean | null
           perm_get_ticket_image?: boolean | null
           perm_hold_ticket?: boolean | null
+          perm_reprice?: boolean | null
           perm_send_ticket?: boolean | null
           phone?: string | null
           price_markup?: number | null
@@ -217,6 +219,7 @@ export type Database = {
           perm_get_pending_ticket?: boolean | null
           perm_get_ticket_image?: boolean | null
           perm_hold_ticket?: boolean | null
+          perm_reprice?: boolean | null
           perm_send_ticket?: boolean | null
           phone?: string | null
           price_markup?: number | null
