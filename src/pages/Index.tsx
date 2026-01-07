@@ -4,10 +4,11 @@ import { FlightSearchForm, SearchFormData } from '@/components/FlightSearchForm'
 import { FlightCard } from '@/components/FlightCard';
 import { FlightFilters, FilterOptions } from '@/components/FlightFilters';
 import { fetchVietJetFlights, fetchVietnamAirlinesFlights, Flight } from '@/services/flightApi';
+import { searchLowFare, LowFareDay } from '../services/lowfareService';
 import { Button } from '@/components/ui/button';
 import { UserProfileDropdown } from '@/components/UserProfileDropdown';
 import backgroundBanner from '@/assets/vietnam-banner-bg.png';
-
+import LowFareChart from '../components/LowFareChart';
 import { PNRCheckModal } from '../components/PNRCheckModal';
 import { EmailTicketModal } from '@/components/EmailTicketModal';
 import { VJTicketModal } from '@/components/VJTicketModal';
@@ -51,6 +52,13 @@ export default function Index() {
   const [showRepriceModal, setShowRepriceModal] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
   const [ticketPNR, setTicketPNR] = useState<string | undefined>(undefined);
+  // Low fare chart state
+  const [lowFareDeparture, setLowFareDeparture] = useState<LowFareDay[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [searchData, setSearchData] = useState<FlightSearchData | null>(null);
+  const [lowFareReturn, setLowFareReturn] = useState<LowFareDay[]>([]);
+  const [isLoadingLowFare, setIsLoadingLowFare] = useState(false);
+  const [lastSearchData, setLastSearchData] = useState<FlightSearchData | null>(null);  
   const [filters, setFilters] = useState<FilterOptions>({
     airlines: ['VJ', 'VNA'],
     showCheapestOnly: true,
@@ -164,6 +172,58 @@ export default function Index() {
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.5);
   };
+  // Fetch low fare data from VietJet
+  const fetchLowFareData = async (data: FlightSearchData) => {
+    setIsLoadingLowFare(true);
+    setLowFareDeparture([]);
+    setLowFareReturn([]);
+    console.log(data);
+    try {
+      const tripType =
+        data.tripType === 'round_trip' ? 'RT' : 'OW';
+      const formatDate = (date: Date | string | undefined) => {
+        if (!date) return '';
+        if (date instanceof Date) {
+          return date.toISOString().slice(0, 10);
+        }
+        return date.split('T')[0];
+      };
+      const result = await searchLowFare(
+        data.from,
+        data.to,
+        tripType,
+        formatDate(data.departureDate),
+        tripType === 'RT' ? formatDate(data.returnDate) : ''
+      );
+      
+      if (result.status_code === '200' && result.body) {
+        setLowFareDeparture(result.body.chiều_đi || []);
+        setLowFareReturn(result.body.chiều_về || []);
+      }
+    } catch (error) {
+      console.error('Error fetching low fare data:', error);
+    } finally {
+      setIsLoadingLowFare(false);
+    }
+  };
+
+  // Handle search with selected dates from low fare chart
+  const handleSearchWithDates = (departureDate: string, returnDate: string) => {
+    if (!lastSearchData) return;
+    const parseVNDate = (dateStr: string) => {
+      return new Date(`${dateStr}T00:00:00+07:00`);
+    };
+    const newSearchData: FlightSearchData = {
+      ...lastSearchData,
+      departureDate: departureDate ? parseVNDate(departureDate) : undefined,
+      returnDate: returnDate ? parseVNDate(returnDate) : undefined,
+      tripType: returnDate ? 'round_trip' : 'one_way',
+    };
+    
+    handleSearch(newSearchData);
+  };
+
+
 
   const handleSearch = async (searchData: SearchFormData) => {
     console.log('=== FLIGHT SEARCH DEBUG ===');
@@ -273,7 +333,10 @@ export default function Index() {
     setError(null);
     setSearchPerformed(true);
     setFlights([]); // Clear previous results
-
+    setHasSearched(true);
+    setSearchData(searchData);
+    setLastSearchData(searchData);
+    
     // Determine which airlines to fetch based on permissions
     const availableAirlines = [];
     if (canCheckVJ) availableAirlines.push('VJ');
@@ -290,7 +353,8 @@ export default function Index() {
 
     try {
       const promises = [];
-
+      // Fetch low fare data (don't wait for it to complete)
+      fetchLowFareData(searchData);
       // Only fetch from airlines with permission
       if (canCheckVJ) {
         console.log('Fetching VietJet flights...');
@@ -442,7 +506,16 @@ export default function Index() {
 
   // Check if show more button should be visible
   const shouldShowMoreButton = filters.showCheapestOnly || filters.directFlightsOnly;
-
+  const formatDate = (date?: Date | string) => {
+    if (!date) return '';
+    const d = typeof date === 'string' ? new Date(date) : date;
+  
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+  
+    return `${y}-${m}-${day}`;
+  };
   return (
     <div className={`min-h-screen transition-all duration-100 ${
       showContent 
@@ -485,7 +558,18 @@ export default function Index() {
         {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-8 animate-fade-in">
             <p className="text-red-600 dark:text-red-400">{error}</p>
           </div>}
-
+        {/* Low Fare Chart - show after first search */}
+        {hasSearched && (lowFareDeparture.length > 0 || lowFareReturn.length > 0) && (
+          <LowFareChart
+            departureData={lowFareDeparture}
+            returnData={lowFareReturn}
+            tripType={searchData.tripType === 'round_trip' ? 'RT' : 'OW'}
+            onSearchWithDates={handleSearchWithDates}
+            isLoading={loading}
+            initialDepartureDate={formatDate(searchData?.departureDate)}
+            initialReturnDate={formatDate(searchData?.returnDate)}
+          />
+        )}
         {filteredFlights.length > 0 && <div className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* VietJet flights on the left */}
