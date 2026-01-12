@@ -94,6 +94,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
 
   const parsePNRs = (pnrString: string): string[] => {
     return pnrString
+      .toUpperCase()
       .split(/[\s\-;]+/)
       .map(pnr => pnr.trim())
       .filter(pnr => pnr.length === 6);
