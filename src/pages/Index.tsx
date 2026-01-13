@@ -61,9 +61,9 @@ export default function Index() {
   const [lastSearchData, setLastSearchData] = useState<FlightSearchData | null>(null);  
   const [filters, setFilters] = useState<FilterOptions>({
     airlines: ['VJ', 'VNA'],
-    showCheapestOnly: true,
-    directFlightsOnly: true,
-    show2pc: true,
+    showCheapestOnly: false,
+    directFlightsOnly: false,
+    show2pc: false,
     sortBy: 'price'
   });
 
@@ -345,9 +345,9 @@ export default function Index() {
     // Reset filters to default state with available airlines
     setFilters({
       airlines: availableAirlines as ('VJ' | 'VNA')[],
-      showCheapestOnly: true,
-      directFlightsOnly: true,
-      show2pc: true,
+      showCheapestOnly: false,
+      directFlightsOnly: false,
+      show2pc: false,
       sortBy: 'price'
     });
 
@@ -473,18 +473,21 @@ export default function Index() {
 
     // Sort flights
     filtered.sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'price':
-          return a.price - b.price;
-        case 'duration':
-          const aDuration = parseInt(a.duration.replace(/[^\d]/g, ''));
-          const bDuration = parseInt(b.duration.replace(/[^\d]/g, ''));
-          return aDuration - bDuration;
-        case 'departure':
-          return a.departure.time.localeCompare(b.departure.time);
-        default:
-          return 0;
+      // 1️⃣ Ưu tiên bay thẳng
+      const aDirect =
+        (!a.return && a.departure.stops === 0) ||
+        (a.return && a.departure.stops === 0 && a.return.stops === 0);
+    
+      const bDirect =
+        (!b.return && b.departure.stops === 0) ||
+        (b.return && b.departure.stops === 0 && b.return.stops === 0);
+    
+      if (aDirect !== bDirect) {
+        return aDirect ? -1 : 1; // bay thẳng lên trước
       }
+    
+      // 2️⃣ Nếu cùng loại → xét giá
+      return a.price - b.price;
     });
     return filtered;
   };
