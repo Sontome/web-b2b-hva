@@ -55,10 +55,10 @@ export default function Index() {
   // Low fare chart state
   const [lowFareDeparture, setLowFareDeparture] = useState<LowFareDay[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
-  const [searchData, setSearchData] = useState<FlightSearchData | null>(null);
+  const [searchData, setSearchData] = useState<SearchFormData | null>(null);
   const [lowFareReturn, setLowFareReturn] = useState<LowFareDay[]>([]);
   const [isLoadingLowFare, setIsLoadingLowFare] = useState(false);
-  const [lastSearchData, setLastSearchData] = useState<FlightSearchData | null>(null);  
+  const [lastSearchData, setLastSearchData] = useState<SearchFormData | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
     airlines: ['VJ', 'VNA'],
     showCheapestOnly: false,
@@ -173,7 +173,7 @@ export default function Index() {
     oscillator.stop(audioContext.currentTime + 0.5);
   };
   // Fetch low fare data from VietJet
-  const fetchLowFareData = async (data: FlightSearchData) => {
+  const fetchLowFareData = async (data: SearchFormData) => {
     setIsLoadingLowFare(true);
     setLowFareDeparture([]);
     setLowFareReturn([]);
@@ -213,7 +213,7 @@ export default function Index() {
     const parseVNDate = (dateStr: string) => {
       return new Date(`${dateStr}T00:00:00+07:00`);
     };
-    const newSearchData: FlightSearchData = {
+    const newSearchData: SearchFormData = {
       ...lastSearchData,
       departureDate: departureDate ? parseVNDate(departureDate) : undefined,
       returnDate: returnDate ? parseVNDate(returnDate) : undefined,
