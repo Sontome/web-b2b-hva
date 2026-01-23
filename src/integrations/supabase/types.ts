@@ -236,6 +236,45 @@ export type Database = {
         }
         Relationships: []
       }
+      reprice: {
+        Row: {
+          auto_reprice: boolean | null
+          created_at: string
+          id: string
+          last_checked_at: string | null
+          new_price: number | null
+          old_price: number | null
+          pnr: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          auto_reprice?: boolean | null
+          created_at?: string
+          id?: string
+          last_checked_at?: string | null
+          new_price?: number | null
+          old_price?: number | null
+          pnr: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_reprice?: boolean | null
+          created_at?: string
+          id?: string
+          last_checked_at?: string | null
+          new_price?: number | null
+          old_price?: number | null
+          pnr?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       search_logs: {
         Row: {
           id: string
