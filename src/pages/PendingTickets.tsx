@@ -212,7 +212,7 @@ const PendingTickets = () => {
 
   const formatPrice = (price: number | null) => {
     if (price === null) return "-";
-    return new Intl.NumberFormat("vi-VN").format(price) + " ₫";
+    return new Intl.NumberFormat("vi-VN").format(price) + " KRW";
   };
 
   const formatDate = (dateStr: string | null) => {
