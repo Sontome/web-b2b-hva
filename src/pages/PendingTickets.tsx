@@ -5,11 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trash2, Plus, Edit2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Edit2, RefreshCw, Copy, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +35,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface RepriceRecord {
   id: string;
@@ -46,7 +52,18 @@ interface RepriceRecord {
   auto_reprice: boolean;
   created_at: string;
   updated_at: string;
+  email: string | null;
 }
+
+const HVA_EMAILS = [
+  "HANVIETAIR.SERVICE@GMAIL.COM",
+  "HANVIETAIR247@GMAIL.COM",
+];
+
+const getEmailTag = (email: string | null): "HVA" | "F2" | null => {
+  if (!email) return null;
+  return HVA_EMAILS.includes(email.toUpperCase()) ? "HVA" : "F2";
+};
 
 const PendingTickets = () => {
   const { profile } = useAuth();
@@ -54,7 +71,14 @@ const PendingTickets = () => {
   const [records, setRecords] = useState<RepriceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteRecordId, setDeleteRecordId] = useState<string | null>(null);
-  
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>("HOLD");
+  const [emailTagFilters, setEmailTagFilters] = useState<{ HVA: boolean; F2: boolean }>({
+    HVA: true,
+    F2: true,
+  });
+
   // Add/Edit modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<RepriceRecord | null>(null);
@@ -91,6 +115,23 @@ const PendingTickets = () => {
       setLoading(false);
     }
   };
+
+  // Filter records based on status and email tags
+  const filteredRecords = records.filter((record) => {
+    // Status filter
+    if (statusFilter !== "ALL" && record.status !== statusFilter) {
+      return false;
+    }
+
+    // Email tag filter
+    const emailTag = getEmailTag(record.email);
+    if (emailTag === "HVA" && !emailTagFilters.HVA) return false;
+    if (emailTag === "F2" && !emailTagFilters.F2) return false;
+    // If no email tag (null), show if either filter is enabled
+    if (emailTag === null && !emailTagFilters.HVA && !emailTagFilters.F2) return false;
+
+    return true;
+  });
 
   const handleDeleteRecord = async () => {
     if (!deleteRecordId) return;
@@ -138,6 +179,20 @@ const PendingTickets = () => {
     setIsModalOpen(true);
   };
 
+  const parsePNRs = (input: string): string[] => {
+    // Split by spaces and filter valid 6-character PNRs
+    const parts = input.trim().toUpperCase().split(/\s+/);
+    const validPNRs: string[] = [];
+
+    for (const part of parts) {
+      if (part.length === 6 && /^[A-Z0-9]+$/.test(part)) {
+        validPNRs.push(part);
+      }
+    }
+
+    return validPNRs;
+  };
+
   const handleSaveRecord = async () => {
     if (!formData.pnr.trim()) {
       toast.error("Vui lòng nhập PNR");
@@ -145,17 +200,17 @@ const PendingTickets = () => {
     }
 
     try {
-      const recordData = {
-        pnr: formData.pnr.trim().toUpperCase(),
-        type: formData.type,
-        status: formData.status,
-        old_price: formData.old_price ? parseFloat(formData.old_price) : null,
-        new_price: formData.new_price ? parseFloat(formData.new_price) : null,
-        auto_reprice: formData.auto_reprice,
-      };
-
       if (editingRecord) {
-        // Update existing record
+        // Update existing record (single PNR)
+        const recordData = {
+          pnr: formData.pnr.trim().toUpperCase(),
+          type: formData.type,
+          status: formData.status,
+          old_price: formData.old_price ? parseFloat(formData.old_price) : null,
+          new_price: formData.new_price ? parseFloat(formData.new_price) : null,
+          auto_reprice: formData.auto_reprice,
+        };
+
         const { error } = await supabase
           .from("reprice")
           .update(recordData)
@@ -164,13 +219,30 @@ const PendingTickets = () => {
         if (error) throw error;
         toast.success("Đã cập nhật thành công");
       } else {
-        // Insert new record
-        const { error } = await supabase
-          .from("reprice")
-          .insert(recordData);
+        // Parse multiple PNRs for new records
+        const pnrs = parsePNRs(formData.pnr);
+
+        if (pnrs.length === 0) {
+          toast.error("Không tìm thấy PNR hợp lệ (PNR phải gồm 6 ký tự)");
+          return;
+        }
+
+        const recordsToInsert = pnrs.map((pnr) => ({
+          pnr,
+          type: formData.type,
+          status: "HOLD",
+          auto_reprice: true,
+        }));
+
+        const { error } = await supabase.from("reprice").insert(recordsToInsert);
 
         if (error) throw error;
-        toast.success("Đã thêm thành công");
+
+        if (pnrs.length === 1) {
+          toast.success("Đã thêm thành công");
+        } else {
+          toast.success(`Đã thêm ${pnrs.length} PNR thành công`);
+        }
       }
 
       setIsModalOpen(false);
@@ -179,6 +251,11 @@ const PendingTickets = () => {
       console.error("Error saving record:", error);
       toast.error("Không thể lưu");
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Đã sao chép");
   };
 
   const getStatusBadge = (status: string) => {
@@ -207,6 +284,37 @@ const PendingTickets = () => {
       <Badge className={`${colors[type] || "bg-muted"} text-white`}>
         {type}
       </Badge>
+    );
+  };
+
+  const getEmailBadge = (email: string | null) => {
+    if (!email) return null;
+
+    const tag = getEmailTag(email);
+    const bgColor = tag === "HVA" ? "bg-orange-500" : "bg-teal-500";
+
+    return (
+      <HoverCard>
+        <HoverCardTrigger asChild>
+          <Badge className={`${bgColor} text-white cursor-pointer`}>
+            {tag}
+          </Badge>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-auto max-w-xs">
+          <div className="space-y-2">
+            <p className="text-sm font-medium break-all">{email}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => copyToClipboard(email)}
+              className="w-full"
+            >
+              <Copy className="w-3 h-3 mr-2" />
+              Sao chép
+            </Button>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
     );
   };
 
@@ -251,14 +359,83 @@ const PendingTickets = () => {
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Danh sách PNR Reprice ({records.length})</CardTitle>
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              Bộ lọc
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {records.length === 0 ? (
+            <div className="flex flex-wrap gap-6">
+              {/* Status Filter */}
+              <div className="space-y-2">
+                <Label>Trạng thái</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Tất cả</SelectItem>
+                    <SelectItem value="HOLD">Đang giữ</SelectItem>
+                    <SelectItem value="PAID">Đã thanh toán</SelectItem>
+                    <SelectItem value="CANCEL">Đã hủy</SelectItem>
+                    <SelectItem value="OVERTIME">Quá hạn</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Email Tag Filter */}
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <div className="flex gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="filter-hva"
+                      checked={emailTagFilters.HVA}
+                      onCheckedChange={(checked) =>
+                        setEmailTagFilters((prev) => ({ ...prev, HVA: !!checked }))
+                      }
+                    />
+                    <label
+                      htmlFor="filter-hva"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      <Badge className="bg-orange-500 text-white">HVA</Badge>
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="filter-f2"
+                      checked={emailTagFilters.F2}
+                      onCheckedChange={(checked) =>
+                        setEmailTagFilters((prev) => ({ ...prev, F2: !!checked }))
+                      }
+                    />
+                    <label
+                      htmlFor="filter-f2"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      <Badge className="bg-teal-500 text-white">F2</Badge>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Danh sách PNR Reprice ({filteredRecords.length}/{records.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredRecords.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                Chưa có PNR nào
+                Không có PNR nào phù hợp với bộ lọc
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -267,6 +444,7 @@ const PendingTickets = () => {
                     <tr className="border-b">
                       <th className="text-left p-3 font-medium">PNR</th>
                       <th className="text-left p-3 font-medium">Loại</th>
+                      <th className="text-left p-3 font-medium">Email</th>
                       <th className="text-left p-3 font-medium">Trạng thái</th>
                       <th className="text-right p-3 font-medium">Giá cũ</th>
                       <th className="text-right p-3 font-medium">Giá mới</th>
@@ -277,10 +455,11 @@ const PendingTickets = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {records.map((record) => (
+                    {filteredRecords.map((record) => (
                       <tr key={record.id} className="border-b hover:bg-muted/50">
                         <td className="p-3 font-mono font-semibold">{record.pnr}</td>
                         <td className="p-3">{getTypeBadge(record.type)}</td>
+                        <td className="p-3">{getEmailBadge(record.email)}</td>
                         <td className="p-3">{getStatusBadge(record.status)}</td>
                         <td className="p-3 text-right">{formatPrice(record.old_price)}</td>
                         <td className="p-3 text-right">
@@ -346,14 +525,21 @@ const PendingTickets = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="pnr">PNR</Label>
+              <Label htmlFor="pnr">
+                PNR {!editingRecord && "(có thể nhập nhiều PNR cách nhau bởi dấu cách)"}
+              </Label>
               <Input
                 id="pnr"
                 value={formData.pnr}
                 onChange={(e) => setFormData({ ...formData, pnr: e.target.value })}
-                placeholder="Nhập mã PNR"
+                placeholder={editingRecord ? "Nhập mã PNR" : "Nhập mã PNR (VD: ABC123 DEF456 GHI789)"}
                 className="uppercase"
               />
+              {!editingRecord && formData.pnr && (
+                <p className="text-xs text-muted-foreground">
+                  Tìm thấy: {parsePNRs(formData.pnr).length} PNR hợp lệ
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">Loại</Label>
