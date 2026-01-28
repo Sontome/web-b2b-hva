@@ -31,44 +31,94 @@ export const SearchStatistics = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      // First, get total count using count option
+      let countQuery = supabase
         .from('search_logs')
-        .select('user_id, searched_at');
+        .select('*', { count: 'exact', head: true });
 
-      // Apply date filters
+      // Apply date filters to count query
       if (filterType === 'month') {
         const monthDate = new Date(selectedMonth + '-01');
         const start = startOfMonth(monthDate);
         const end = endOfMonth(monthDate);
-        query = query
+        countQuery = countQuery
           .gte('searched_at', start.toISOString())
           .lte('searched_at', end.toISOString());
       } else if (filterType === 'day') {
         const dayDate = new Date(selectedDate);
         const start = startOfDay(dayDate);
         const end = endOfDay(dayDate);
-        query = query
+        countQuery = countQuery
           .gte('searched_at', start.toISOString())
           .lte('searched_at', end.toISOString());
       }
 
-      const { data: searchLogs, error: searchError } = await query;
+      const { count: totalCount, error: countError } = await countQuery;
 
-      if (searchError) {
-        console.error('Error fetching search logs:', searchError);
+      if (countError) {
+        console.error('Error fetching count:', countError);
         return;
       }
 
-      // Count searches per user
-      const countMap: Record<string, number> = {};
-      searchLogs?.forEach(log => {
-        countMap[log.user_id] = (countMap[log.user_id] || 0) + 1;
-      });
+      setTotalSearches(totalCount || 0);
 
-      setTotalSearches(searchLogs?.length || 0);
+      // For per-user stats, we need to fetch data in batches and aggregate
+      // Since Supabase doesn't support GROUP BY in the client, we'll use a different approach
+      // Fetch all user_ids with their search counts using RPC or paginated queries
+      
+      const userSearchCounts: Record<string, number> = {};
+      let offset = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        let query = supabase
+          .from('search_logs')
+          .select('user_id')
+          .range(offset, offset + batchSize - 1);
+
+        // Apply date filters
+        if (filterType === 'month') {
+          const monthDate = new Date(selectedMonth + '-01');
+          const start = startOfMonth(monthDate);
+          const end = endOfMonth(monthDate);
+          query = query
+            .gte('searched_at', start.toISOString())
+            .lte('searched_at', end.toISOString());
+        } else if (filterType === 'day') {
+          const dayDate = new Date(selectedDate);
+          const start = startOfDay(dayDate);
+          const end = endOfDay(dayDate);
+          query = query
+            .gte('searched_at', start.toISOString())
+            .lte('searched_at', end.toISOString());
+        }
+
+        const { data: searchLogs, error: searchError } = await query;
+
+        if (searchError) {
+          console.error('Error fetching search logs batch:', searchError);
+          break;
+        }
+
+        if (!searchLogs || searchLogs.length === 0) {
+          hasMore = false;
+        } else {
+          // Count searches per user
+          searchLogs.forEach(log => {
+            userSearchCounts[log.user_id] = (userSearchCounts[log.user_id] || 0) + 1;
+          });
+
+          if (searchLogs.length < batchSize) {
+            hasMore = false;
+          } else {
+            offset += batchSize;
+          }
+        }
+      }
 
       // Get user details
-      const userIds = Object.keys(countMap);
+      const userIds = Object.keys(userSearchCounts);
       if (userIds.length === 0) {
         setStats([]);
         setLoading(false);
@@ -80,9 +130,15 @@ export const SearchStatistics = () => {
         .select('id, full_name')
         .in('id', userIds);
 
-      // Get emails from auth admin
-      const { data: authData } = await supabase.auth.admin.listUsers();
-      const users = authData?.users || [];
+      // Get emails from auth admin - this might fail for non-admin users
+      let users: { id: string; email?: string }[] = [];
+      try {
+        const { data: authData } = await supabase.auth.admin.listUsers();
+        users = authData?.users || [];
+      } catch (e) {
+        // If admin API fails, we just won't have emails
+        console.log('Admin API not available, emails will show as N/A');
+      }
 
       // Combine data
       const statsData: SearchStats[] = userIds.map(userId => {
@@ -92,7 +148,7 @@ export const SearchStatistics = () => {
           user_id: userId,
           email: user?.email || 'N/A',
           full_name: profile?.full_name || null,
-          search_count: countMap[userId]
+          search_count: userSearchCounts[userId]
         };
       }).sort((a, b) => b.search_count - a.search_count);
 
