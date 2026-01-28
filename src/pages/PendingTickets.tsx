@@ -58,6 +58,7 @@ interface RepriceRecord {
 const HVA_EMAILS = [
   "HANVIETAIR.SERVICE@GMAIL.COM",
   "HANVIETAIR247@GMAIL.COM",
+  "HANVIETAIR@GMAIL.COM",
 ];
 
 const getEmailTag = (email: string | null): "HVA" | "F2" | null => {
