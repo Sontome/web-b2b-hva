@@ -240,6 +240,7 @@ export type Database = {
         Row: {
           auto_reprice: boolean | null
           created_at: string
+          email: string | null
           id: string
           last_checked_at: string | null
           new_price: number | null
@@ -252,6 +253,7 @@ export type Database = {
         Insert: {
           auto_reprice?: boolean | null
           created_at?: string
+          email?: string | null
           id?: string
           last_checked_at?: string | null
           new_price?: number | null
@@ -264,6 +266,7 @@ export type Database = {
         Update: {
           auto_reprice?: boolean | null
           created_at?: string
+          email?: string | null
           id?: string
           last_checked_at?: string | null
           new_price?: number | null
