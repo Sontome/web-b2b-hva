@@ -160,6 +160,75 @@ export interface Flight {
   };
 }
 
+// Interface for Other Airlines flights from VNA API
+export interface OtherAirlineFlight {
+  id: string;
+  airline: string; // OZ, TW, LJ, BX, KE, 7C, YP, RS
+  airlineName: string;
+  departure: {
+    time: string;
+    airport: string;
+    city: string;
+    date: string;
+    stops: number;
+  };
+  arrival: {
+    time: string;
+    airport: string;
+    city: string;
+    date: string;
+  };
+  return?: {
+    departure: {
+      time: string;
+      airport: string;
+      city: string;
+      date: string;
+      stops: number;
+    };
+    arrival: {
+      time: string;
+      airport: string;
+      city: string;
+      date: string;
+    };
+    ticketClass: string;
+    stops: number;
+    stopInfo?: {
+      stop1: string;
+      waitTime: string;
+    };
+  };
+  duration: string;
+  price: number;
+  currency: string;
+  availableSeats: number;
+  ticketClass: string;
+  stopInfo?: {
+    stop1: string;
+    waitTime: string;
+  };
+}
+
+// Airline code to name mapping
+const AIRLINE_NAMES: Record<string, string> = {
+  'OZ': 'Asiana',
+  'TW': 'Tway',
+  'LJ': 'Jin Air',
+  'BX': 'Air Busan',
+  'KE': 'Korean Air',
+  '7C': 'Jeju',
+  'YP': 'Premia',
+  'RS': 'Air Seoul',
+  'VNA': 'Vietnam Airlines',
+};
+
+// Response type for VNA flights including other airlines
+export interface VNAFlightsResult {
+  vnaFlights: Flight[];
+  otherFlights: OtherAirlineFlight[];
+}
+
 const formatDate = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -301,8 +370,8 @@ export const fetchVietJetFlights = async (searchData: SearchFormData): Promise<F
   }
 };
 
-export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): Promise<Flight[]> => {
-  if (!searchData.departureDate) return [];
+export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): Promise<VNAFlightsResult> => {
+  if (!searchData.departureDate) return { vnaFlights: [], otherFlights: [] };
 
   const requestBody = {
     dep0: searchData.from,
@@ -326,7 +395,7 @@ export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): P
   console.log('Calling Vietnam Airlines API with:', requestBody);
 
   try {
-    const response = await fetch('https://thuhongtour.com/vna/check-ve-v2', {
+    const response = await fetch('https://thuhongtour.com/vna/check-ve-v3', {
       method: 'POST',
       headers: {
         'accept': 'application/json',
@@ -343,61 +412,123 @@ export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): P
     console.log('Vietnam Airlines API response:', data);
 
     if (data.status_code !== 200 || !data.body) {
-      return [];
+      return { vnaFlights: [], otherFlights: [] };
     }
 
-    return data.body.map((flight, index) => ({
-      id: `vna-${flight.chiều_đi.id}-${index}`,
-      airline: 'VNA' as const,
-      flightNumber: `VN${flight.chiều_đi.id}`,
-      departure: {
-        time: flight.chiều_đi.giờ_cất_cánh,
-        airport: flight.chiều_đi.nơi_đi,
-        city: getCityName(flight.chiều_đi.nơi_đi),
-        date: flight.chiều_đi.ngày_cất_cánh,
-        stops: parseInt(flight.chiều_đi.số_điểm_dừng),
-      },
-      arrival: {
-        time: flight.chiều_đi.giờ_hạ_cánh,
-        airport: flight.chiều_đi.nơi_đến,
-        city: getCityName(flight.chiều_đi.nơi_đến),
-        date: flight.chiều_đi.ngày_hạ_cánh,
-      },
-      return: flight.chiều_về ? {
-        departure: {
-          time: flight.chiều_về.giờ_cất_cánh,
-          airport: flight.chiều_về.nơi_đi,
-          city: getCityName(flight.chiều_về.nơi_đi),
-          date: flight.chiều_về.ngày_cất_cánh,
-          stops: parseInt(flight.chiều_về.số_điểm_dừng),
-        },
-        arrival: {
-          time: flight.chiều_về.giờ_hạ_cánh,
-          airport: flight.chiều_về.nơi_đến,
-          city: getCityName(flight.chiều_về.nơi_đến),
-          date: flight.chiều_về.ngày_hạ_cánh,
-        },
-        ticketClass: flight.chiều_về.loại_vé,
-        stops: parseInt(flight.chiều_về.số_điểm_dừng),
-        stopInfo: flight.chiều_về.điểm_dừng_1 ? {
-          stop1: flight.chiều_về.điểm_dừng_1,
-          waitTime: flight.chiều_về.thời_gian_chờ,
-        } : undefined,
-      } : undefined,
-      duration: formatDuration(flight.chiều_đi.thời_gian_bay),
-      price: parseInt(flight.thông_tin_chung.giá_vé),
-      currency: 'VND',
-      aircraft: 'Boeing 787',
-      availableSeats: parseInt(flight.thông_tin_chung.số_ghế_còn),
-      ticketClass: flight.chiều_đi.loại_vé,
-      baggageType: flight.thông_tin_chung.hành_lý_vna,
-      stopInfo: flight.chiều_đi.điểm_dừng_1 ? {
-        stop1: flight.chiều_đi.điểm_dừng_1,
-        waitTime: flight.chiều_đi.thời_gian_chờ,
-      } : undefined,
-    }));
+    const vnaFlights: Flight[] = [];
+    const otherFlights: OtherAirlineFlight[] = [];
+
+    data.body.forEach((flight, index) => {
+      const airlineCode = flight.chiều_đi.hãng;
+      
+      if (airlineCode === 'VNA') {
+        // VNA flight
+        vnaFlights.push({
+          id: `vna-${flight.chiều_đi.id}-${index}`,
+          airline: 'VNA' as const,
+          flightNumber: `VN${flight.chiều_đi.id}`,
+          departure: {
+            time: flight.chiều_đi.giờ_cất_cánh,
+            airport: flight.chiều_đi.nơi_đi,
+            city: getCityName(flight.chiều_đi.nơi_đi),
+            date: flight.chiều_đi.ngày_cất_cánh,
+            stops: parseInt(flight.chiều_đi.số_điểm_dừng),
+          },
+          arrival: {
+            time: flight.chiều_đi.giờ_hạ_cánh,
+            airport: flight.chiều_đi.nơi_đến,
+            city: getCityName(flight.chiều_đi.nơi_đến),
+            date: flight.chiều_đi.ngày_hạ_cánh,
+          },
+          return: flight.chiều_về ? {
+            departure: {
+              time: flight.chiều_về.giờ_cất_cánh,
+              airport: flight.chiều_về.nơi_đi,
+              city: getCityName(flight.chiều_về.nơi_đi),
+              date: flight.chiều_về.ngày_cất_cánh,
+              stops: parseInt(flight.chiều_về.số_điểm_dừng),
+            },
+            arrival: {
+              time: flight.chiều_về.giờ_hạ_cánh,
+              airport: flight.chiều_về.nơi_đến,
+              city: getCityName(flight.chiều_về.nơi_đến),
+              date: flight.chiều_về.ngày_hạ_cánh,
+            },
+            ticketClass: flight.chiều_về.loại_vé,
+            stops: parseInt(flight.chiều_về.số_điểm_dừng),
+            stopInfo: flight.chiều_về.điểm_dừng_1 ? {
+              stop1: flight.chiều_về.điểm_dừng_1,
+              waitTime: flight.chiều_về.thời_gian_chờ,
+            } : undefined,
+          } : undefined,
+          duration: formatDuration(flight.chiều_đi.thời_gian_bay),
+          price: parseInt(flight.thông_tin_chung.giá_vé),
+          currency: 'VND',
+          aircraft: 'Boeing 787',
+          availableSeats: parseInt(flight.thông_tin_chung.số_ghế_còn),
+          ticketClass: flight.chiều_đi.loại_vé,
+          baggageType: flight.thông_tin_chung.hành_lý_vna,
+          stopInfo: flight.chiều_đi.điểm_dừng_1 ? {
+            stop1: flight.chiều_đi.điểm_dừng_1,
+            waitTime: flight.chiều_đi.thời_gian_chờ,
+          } : undefined,
+        });
+      } else if (AIRLINE_NAMES[airlineCode]) {
+        // Other airline flight
+        otherFlights.push({
+          id: `other-${airlineCode}-${flight.chiều_đi.id}-${index}`,
+          airline: airlineCode,
+          airlineName: AIRLINE_NAMES[airlineCode],
+          departure: {
+            time: flight.chiều_đi.giờ_cất_cánh,
+            airport: flight.chiều_đi.nơi_đi,
+            city: getCityName(flight.chiều_đi.nơi_đi),
+            date: flight.chiều_đi.ngày_cất_cánh,
+            stops: parseInt(flight.chiều_đi.số_điểm_dừng),
+          },
+          arrival: {
+            time: flight.chiều_đi.giờ_hạ_cánh,
+            airport: flight.chiều_đi.nơi_đến,
+            city: getCityName(flight.chiều_đi.nơi_đến),
+            date: flight.chiều_đi.ngày_hạ_cánh,
+          },
+          return: flight.chiều_về ? {
+            departure: {
+              time: flight.chiều_về.giờ_cất_cánh,
+              airport: flight.chiều_về.nơi_đi,
+              city: getCityName(flight.chiều_về.nơi_đi),
+              date: flight.chiều_về.ngày_cất_cánh,
+              stops: parseInt(flight.chiều_về.số_điểm_dừng),
+            },
+            arrival: {
+              time: flight.chiều_về.giờ_hạ_cánh,
+              airport: flight.chiều_về.nơi_đến,
+              city: getCityName(flight.chiều_về.nơi_đến),
+              date: flight.chiều_về.ngày_hạ_cánh,
+            },
+            ticketClass: flight.chiều_về.loại_vé,
+            stops: parseInt(flight.chiều_về.số_điểm_dừng),
+            stopInfo: flight.chiều_về.điểm_dừng_1 ? {
+              stop1: flight.chiều_về.điểm_dừng_1,
+              waitTime: flight.chiều_về.thời_gian_chờ,
+            } : undefined,
+          } : undefined,
+          duration: formatDuration(flight.chiều_đi.thời_gian_bay),
+          price: parseInt(flight.thông_tin_chung.giá_vé),
+          currency: 'VND',
+          availableSeats: parseInt(flight.thông_tin_chung.số_ghế_còn),
+          ticketClass: flight.chiều_đi.loại_vé,
+          stopInfo: flight.chiều_đi.điểm_dừng_1 ? {
+            stop1: flight.chiều_đi.điểm_dừng_1,
+            waitTime: flight.chiều_đi.thời_gian_chờ,
+          } : undefined,
+        });
+      }
+    });
+
+    return { vnaFlights, otherFlights };
   } catch (error) {
     console.error('Vietnam Airlines API error:', error);
     throw error;
   }
-};
+}
