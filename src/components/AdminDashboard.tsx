@@ -28,10 +28,13 @@ interface Profile {
   price_rt_vj: number;
   price_ow_vna: number;
   price_rt_vna: number;
+  price_ow_other: number;
+  price_rt_other: number;
   status: string;
   created_at: string;
   perm_check_vj: boolean;
   perm_check_vna: boolean;
+  perm_check_other: boolean;
   perm_send_ticket: boolean;
   perm_get_ticket_image: boolean;
   perm_get_pending_ticket: boolean;
@@ -45,6 +48,7 @@ interface Profile {
   agent_name: string | null;
   address: string | null;
   business_number: string | null;
+  list_other: string[] | null;
 }
 
 export const AdminDashboard = () => {
@@ -64,10 +68,13 @@ export const AdminDashboard = () => {
     price_rt_vj: 0,
     price_ow_vna: 0,
     price_rt_vna: 0,
+    price_ow_other: 0,
+    price_rt_other: 0,
     role: 'user',
     status: 'active',
     perm_check_vj: false,
     perm_check_vna: false,
+    perm_check_other: false,
     perm_send_ticket: false,
     perm_get_ticket_image: false,
     perm_get_pending_ticket: false,
@@ -81,6 +88,7 @@ export const AdminDashboard = () => {
     agent_name: '',
     address: '',
     business_number: '',
+    list_other: '',
   });
 
   useEffect(() => {
@@ -147,16 +155,19 @@ export const AdminDashboard = () => {
       price_rt_vj: profile.price_rt_vj || 0,
       price_ow_vna: profile.price_ow_vna || 0,
       price_rt_vna: profile.price_rt_vna || 0,
+      price_ow_other: profile.price_ow_other || 0,
+      price_rt_other: profile.price_rt_other || 0,
       role: profile.role,
       status: profile.status,
       perm_check_vj: profile.perm_check_vj || false,
       perm_check_vna: profile.perm_check_vna || false,
+      perm_check_other: profile.perm_check_other || false,
       perm_send_ticket: profile.perm_send_ticket || false,
       perm_get_ticket_image: profile.perm_get_ticket_image || false,
       perm_get_pending_ticket: profile.perm_get_pending_ticket || false,
       perm_check_discount: profile.perm_check_discount || false,
       perm_check_vna_issued: profile.perm_check_vna_issued || false,
-      perm_reprice: (profile as any).perm_reprice || false,
+      perm_reprice: profile.perm_reprice || false,
       hold_ticket_quantity: profile.hold_ticket_quantity || 0,
       apikey_telegram: profile.apikey_telegram || '',
       idchat_telegram: profile.idchat_telegram || '',
@@ -164,6 +175,7 @@ export const AdminDashboard = () => {
       agent_name: profile.agent_name || '',
       address: profile.address || '',
       business_number: profile.business_number || '',
+      list_other: profile.list_other?.join(', ') || '',
     });
   };
 
@@ -173,6 +185,11 @@ export const AdminDashboard = () => {
     try {
       // Automatically set perm_hold_ticket based on hold_ticket_quantity
       const permHoldTicket = editForm.hold_ticket_quantity > 0;
+
+      // Parse list_other from comma-separated string to array
+      const listOtherArray = editForm.list_other
+        ? editForm.list_other.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0)
+        : [];
 
       // Update profile data
       const { error: profileError } = await supabase
@@ -188,9 +205,12 @@ export const AdminDashboard = () => {
           price_rt_vj: editForm.price_rt_vj,
           price_ow_vna: editForm.price_ow_vna,
           price_rt_vna: editForm.price_rt_vna,
+          price_ow_other: editForm.price_ow_other,
+          price_rt_other: editForm.price_rt_other,
           status: editForm.status,
           perm_check_vj: editForm.perm_check_vj,
           perm_check_vna: editForm.perm_check_vna,
+          perm_check_other: editForm.perm_check_other,
           perm_send_ticket: editForm.perm_send_ticket,
           perm_get_ticket_image: editForm.perm_get_ticket_image,
           perm_get_pending_ticket: editForm.perm_get_pending_ticket,
@@ -205,6 +225,7 @@ export const AdminDashboard = () => {
           agent_name: editForm.agent_name || null,
           address: editForm.address || null,
           business_number: editForm.business_number || null,
+          list_other: listOtherArray,
           updated_at: new Date().toISOString(),
         })
         .eq('id', editingProfile.id);
@@ -656,6 +677,30 @@ export const AdminDashboard = () => {
                                   step="1000"
                                 />
                               </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="price_ow_other">Phí Other 1 chiều (KRW)</Label>
+                                <Input
+                                  id="price_ow_other"
+                                  type="number"
+                                  value={editForm.price_ow_other}
+                                  onChange={(e) => setEditForm(prev => ({ ...prev, price_ow_other: parseFloat(e.target.value) || 0 }))}
+                                  placeholder="10000"
+                                  min="0"
+                                  step="1000"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="price_rt_other">Phí Other khứ hồi (KRW)</Label>
+                                <Input
+                                  id="price_rt_other"
+                                  type="number"
+                                  value={editForm.price_rt_other}
+                                  onChange={(e) => setEditForm(prev => ({ ...prev, price_rt_other: parseFloat(e.target.value) || 0 }))}
+                                  placeholder="10000"
+                                  min="0"
+                                  step="1000"
+                                />
+                              </div>
 
                               {/* Permissions Section */}
                               <div className="space-y-4 pt-4 border-t">
@@ -677,6 +722,28 @@ export const AdminDashboard = () => {
                                     checked={editForm.perm_check_vna}
                                     onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, perm_check_vna: checked }))}
                                   />
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                  <Label htmlFor="perm_check_other">Check vé Other</Label>
+                                  <Switch
+                                    id="perm_check_other"
+                                    checked={editForm.perm_check_other}
+                                    onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, perm_check_other: checked }))}
+                                  />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label htmlFor="list_other">Danh sách hãng Other (VD: OZ, TW, LJ)</Label>
+                                  <Input
+                                    id="list_other"
+                                    value={editForm.list_other}
+                                    onChange={(e) => setEditForm(prev => ({ ...prev, list_other: e.target.value }))}
+                                    placeholder="OZ, TW, LJ (phân cách bằng dấu phẩy)"
+                                  />
+                                  <p className="text-xs text-muted-foreground">
+                                    Nhập mã hãng bay, phân cách bằng dấu phẩy
+                                  </p>
                                 </div>
 
                                 <div className="flex items-center justify-between">
