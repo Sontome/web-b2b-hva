@@ -46,7 +46,16 @@ export const PNRCheckModal = ({ isOpen, onClose }: PNRCheckModalProps) => {
   
     try {
       // API mới trả PNG
-      const listResponse = await fetch(`https://thuhongtour.com/list-pnr/${pnrCode.trim()}`);
+      const listResponse = await fetch('https://thuhongtour.com/list-pnr-v2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pnr: pnrCode.trim(),
+          banner: '',
+        }),
+      });
       const listResult = await listResponse.json();
   
       if (!listResult.files || !Array.isArray(listResult.files)) {
