@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { format, parse } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Search, Calendar, TrendingDown } from 'lucide-react';
+import { Search, Calendar, TrendingDown, Plane } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -16,6 +16,13 @@ interface LowFareDay {
   loại_vé: string;
 }
 
+interface CheapestOtherFlight {
+  airlineName: string;
+  price: number;
+  route: string;
+  totalFlights: number;
+}
+
 interface LowFareChartProps {
   departureData: LowFareDay[];
   returnData: LowFareDay[];
@@ -24,6 +31,8 @@ interface LowFareChartProps {
   isLoading?: boolean;
   initialDepartureDate?: string; // yyyy-MM-dd format
   initialReturnDate?: string; // yyyy-MM-dd format
+  cheapestOtherFlight?: CheapestOtherFlight | null;
+  onShowOtherAirlines?: () => void;
 }
 
 const formatVND = (value: number) => {
@@ -169,6 +178,8 @@ const LowFareChart: React.FC<LowFareChartProps> = ({
   isLoading = false,
   initialDepartureDate,
   initialReturnDate,
+  cheapestOtherFlight,
+  onShowOtherAirlines,
 }) => {
   // Pre-select initial dates
   const [selectedDepartureDate, setSelectedDepartureDate] = useState<string | null>(
@@ -336,6 +347,31 @@ const LowFareChart: React.FC<LowFareChartProps> = ({
           />
         )}
       </div>
+
+      {/* Other Airlines Cheapest Box */}
+      {/* cheapestOtherFlight && onShowOtherAirlines && (
+        <div 
+          className="mt-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-3 cursor-pointer hover:shadow-md transition-all duration-300"
+          onClick={onShowOtherAirlines}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Plane className="w-5 h-5 text-purple-600" />
+              <span className="font-medium text-purple-700">
+                Hãng khác rẻ nhất: {cheapestOtherFlight.airlineName}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-purple-600">
+                {cheapestOtherFlight.totalFlights} chuyến
+              </span>
+              <span className="font-bold text-purple-700">
+                {new Intl.NumberFormat('ko-KR').format(cheapestOtherFlight.price)} KRW
+              </span>
+            </div>
+          </div>
+        </div>
+      ) */}
 
       {/* Search button */}
       {canSearch && (
