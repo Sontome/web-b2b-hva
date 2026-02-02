@@ -144,7 +144,9 @@ export type Database = {
           id: string
           idchat_telegram: string | null
           linkfacebook: string | null
+          list_other: string[] | null
           perm_check_discount: boolean | null
+          perm_check_other: boolean | null
           perm_check_vj: boolean | null
           perm_check_vna: boolean | null
           perm_check_vna_issued: boolean | null
@@ -155,8 +157,10 @@ export type Database = {
           perm_send_ticket: boolean | null
           phone: string | null
           price_markup: number | null
+          price_ow_other: number | null
           price_ow_vj: number | null
           price_ow_vna: number | null
+          price_rt_other: number | null
           price_rt_vj: number | null
           price_rt_vna: number | null
           price_vj: number | null
@@ -178,7 +182,9 @@ export type Database = {
           id: string
           idchat_telegram?: string | null
           linkfacebook?: string | null
+          list_other?: string[] | null
           perm_check_discount?: boolean | null
+          perm_check_other?: boolean | null
           perm_check_vj?: boolean | null
           perm_check_vna?: boolean | null
           perm_check_vna_issued?: boolean | null
@@ -189,8 +195,10 @@ export type Database = {
           perm_send_ticket?: boolean | null
           phone?: string | null
           price_markup?: number | null
+          price_ow_other?: number | null
           price_ow_vj?: number | null
           price_ow_vna?: number | null
+          price_rt_other?: number | null
           price_rt_vj?: number | null
           price_rt_vna?: number | null
           price_vj?: number | null
@@ -212,7 +220,9 @@ export type Database = {
           id?: string
           idchat_telegram?: string | null
           linkfacebook?: string | null
+          list_other?: string[] | null
           perm_check_discount?: boolean | null
+          perm_check_other?: boolean | null
           perm_check_vj?: boolean | null
           perm_check_vna?: boolean | null
           perm_check_vna_issued?: boolean | null
@@ -223,8 +233,10 @@ export type Database = {
           perm_send_ticket?: boolean | null
           phone?: string | null
           price_markup?: number | null
+          price_ow_other?: number | null
           price_ow_vj?: number | null
           price_ow_vna?: number | null
+          price_rt_other?: number | null
           price_rt_vj?: number | null
           price_rt_vna?: number | null
           price_vj?: number | null
