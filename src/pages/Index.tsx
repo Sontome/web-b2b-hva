@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FlightSearchForm, SearchFormData } from '@/components/FlightSearchForm';
 import { FlightCard } from '@/components/FlightCard';
 import { FlightFilters, FilterOptions } from '@/components/FlightFilters';
-import { fetchVietJetFlights, fetchVietnamAirlinesFlights, Flight } from '@/services/flightApi';
+import { fetchVietJetFlights, fetchVietnamAirlinesFlights, Flight, OtherAirlineFlight } from '@/services/flightApi';
 import { searchLowFare, LowFareDay } from '../services/lowfareService';
 import { Button } from '@/components/ui/button';
 import { UserProfileDropdown } from '@/components/UserProfileDropdown';
@@ -18,10 +18,11 @@ import { VNABookingModal } from '@/components/VNABookingModal';
 import { RepriceModal } from '@/components/RepriceModal';
 import { InkSplashEffect } from '@/components/InkSplashEffect';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowUp, Mail, Wrench, ShoppingBasket, TrendingDown } from 'lucide-react';
+import { ArrowUp, Mail, Wrench, ShoppingBasket, TrendingDown, Plane } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { TopNavbar } from '@/components/TopNavbar';
 import { supabase } from '@/integrations/supabase/client';
+import { OtherAirlinesModal, OtherFlight, AIRLINE_NAMES, AIRLINE_BAGGAGE } from '@/components/OtherAirlinesModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,8 @@ export default function Index() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [flights, setFlights] = useState<Flight[]>([]);
+  const [otherFlights, setOtherFlights] = useState<OtherFlight[]>([]);
+  const [showOtherAirlinesModal, setShowOtherAirlinesModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchPerformed, setSearchPerformed] = useState(false);
@@ -333,6 +336,7 @@ export default function Index() {
     setError(null);
     setSearchPerformed(true);
     setFlights([]); // Clear previous results
+    setOtherFlights([]); // Clear other airlines results
     setHasSearched(true);
     setSearchData(searchData);
     setLastSearchData(searchData);
@@ -378,10 +382,34 @@ export default function Index() {
         promises.push(vietnamAirlinesPromise);
         
         // Handle Vietnam Airlines results as soon as they arrive
-        vietnamAirlinesPromise.then(vietnamAirlinesFlights => {
-          if (vietnamAirlinesFlights.length > 0) {
-            setFlights(prev => [...prev, ...vietnamAirlinesFlights]);
-            setTimeout(() => playNotificationSound(), 200); // Slight delay for second notification
+        vietnamAirlinesPromise.then(result => {
+          if (result.vnaFlights.length > 0) {
+            setFlights(prev => [...prev, ...result.vnaFlights]);
+            setTimeout(() => playNotificationSound(), 200);
+          }
+          
+          // Process Other Airlines flights if user has permission
+          if (profile?.perm_check_other && result.otherFlights.length > 0) {
+            const listOther = profile.list_other || [];
+            const isRoundTrip = !!searchData.returnDate;
+            const owMarkup = profile.price_ow_other || 0;
+            const rtMarkup = profile.price_rt_other || 0;
+            
+            // Filter and transform other flights
+            const processedOtherFlights: OtherFlight[] = result.otherFlights
+              .filter(f => listOther.includes(f.airline))
+              .map(f => {
+                const priceWithMarkup = f.price + (isRoundTrip ? rtMarkup : owMarkup);
+                const roundedPrice = Math.round(priceWithMarkup / 100) * 100;
+                
+                return {
+                  ...f,
+                  adjustedPrice: roundedPrice,
+                  baggageInfo: AIRLINE_BAGGAGE[f.airline] || { carryOn: '10kg' },
+                };
+              });
+            
+            setOtherFlights(processedOtherFlights);
           }
         }).catch(error => {
           console.error('Vietnam Airlines API error:', error);
@@ -394,7 +422,13 @@ export default function Index() {
       
       results.forEach(result => {
         if (result.status === 'fulfilled') {
-          allFlights = [...allFlights, ...result.value];
+          // Handle both VJ (Flight[]) and VNA (VNAFlightsResult) responses
+          const value = result.value;
+          if (Array.isArray(value)) {
+            allFlights = [...allFlights, ...value];
+          } else if (value && 'vnaFlights' in value) {
+            allFlights = [...allFlights, ...value.vnaFlights];
+          }
         }
       });
 
@@ -498,6 +532,17 @@ export default function Index() {
   const vjFlights = filteredFlights.filter(f => f.airline === 'VJ');
   const vnaFlights = filteredFlights.filter(f => f.airline === 'VNA');
 
+  // Get allowed airlines for other flights
+  const allowedOtherAirlines = profile?.list_other || [];
+  
+  // Filter other flights by allowed airlines and find cheapest
+  const filteredOtherFlights = otherFlights.filter(f => allowedOtherAirlines.includes(f.airline));
+  const cheapestOtherFlight = filteredOtherFlights.length > 0 
+    ? filteredOtherFlights.reduce((prev, current) => 
+        prev.adjustedPrice < current.adjustedPrice ? prev : current
+      )
+    : null;
+
   // Check if we have direct flights (both departure and return for round-trip)
   const hasDirectFlights = flights.some(f => {
     if (!f.return) {
@@ -509,6 +554,11 @@ export default function Index() {
 
   // Check if show more button should be visible
   const shouldShowMoreButton = filters.showCheapestOnly || filters.directFlightsOnly;
+
+  // Format price for display
+  const formatPriceDisplay = (price: number) => {
+    return new Intl.NumberFormat('ko-KR').format(price);
+  };
   const formatDate = (date?: Date | string) => {
     if (!date) return '';
     const d = typeof date === 'string' ? new Date(date) : date;
@@ -571,8 +621,48 @@ export default function Index() {
             isLoading={loading}
             initialDepartureDate={formatDate(searchData?.departureDate)}
             initialReturnDate={formatDate(searchData?.returnDate)}
+            cheapestOtherFlight={profile?.perm_check_other && cheapestOtherFlight ? {
+              airlineName: cheapestOtherFlight.airlineName,
+              price: cheapestOtherFlight.adjustedPrice,
+              route: `${cheapestOtherFlight.departure.airport} → ${cheapestOtherFlight.arrival.airport}`,
+              totalFlights: filteredOtherFlights.length,
+            } : null}
+            onShowOtherAirlines={() => setShowOtherAirlinesModal(true)}
           />
         )}
+
+        {/* Other Airlines Cheapest Flight Box */}
+        {profile?.perm_check_other && cheapestOtherFlight && filteredOtherFlights.length > 0 && (
+          <div 
+            className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700 rounded-xl p-4 mb-6 cursor-pointer hover:shadow-lg transition-all duration-300 animate-fade-in"
+            onClick={() => setShowOtherAirlinesModal(true)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-purple-100 dark:bg-purple-800 p-2 rounded-lg">
+                  <Plane className="w-6 h-6 text-purple-600 dark:text-purple-300" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300">
+                    Hãng khác rẻ nhất: {cheapestOtherFlight.airlineName}
+                  </h3>
+                  <p className="text-sm text-purple-600 dark:text-purple-400">
+                    Bấm để xem tất cả {filteredOtherFlights.length} chuyến bay từ các hãng khác
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                  {formatPriceDisplay(cheapestOtherFlight.adjustedPrice)} KRW
+                </div>
+                <div className="text-sm text-purple-500 dark:text-purple-400">
+                  {cheapestOtherFlight.departure.airport} → {cheapestOtherFlight.arrival.airport}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {filteredFlights.length > 0 && <div className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* VietJet flights on the left */}
@@ -721,6 +811,14 @@ export default function Index() {
               }}
             />
           )}
+          
+          {/* Other Airlines Modal */}
+          <OtherAirlinesModal
+            isOpen={showOtherAirlinesModal}
+            onClose={() => setShowOtherAirlinesModal(false)}
+            flights={otherFlights}
+            allowedAirlines={allowedOtherAirlines}
+          />
         </>
       )}
 
