@@ -144,6 +144,8 @@ export interface Flight {
       stop1: string;
       waitTime: string;
     };
+    landingTime?: string;
+    landingDate?: string;
   };
   duration: string;
   price: number;
@@ -158,6 +160,8 @@ export interface Flight {
     stop1: string;
     waitTime: string;
   };
+  landingTime?: string;
+  landingDate?: string;
 }
 
 // Interface for Other Airlines flights from VNA API
@@ -198,6 +202,8 @@ export interface OtherAirlineFlight {
       stop1: string;
       waitTime: string;
     };
+    landingTime?: string;
+    landingDate?: string;
   };
   duration: string;
   price: number;
@@ -208,6 +214,8 @@ export interface OtherAirlineFlight {
     stop1: string;
     waitTime: string;
   };
+  landingTime?: string;
+  landingDate?: string;
 }
 
 // Airline code to name mapping
@@ -349,6 +357,8 @@ export const fetchVietJetFlights = async (searchData: SearchFormData): Promise<F
           stop1: flight['chiều_về'].điểm_dừng_1,
           waitTime: flight['chiều_về'].thời_gian_chờ,
         } : undefined,
+        landingTime: flight['chiều_về'].giờ_hạ_cánh,
+        landingDate: flight['chiều_về'].ngày_hạ_cánh,
       } : undefined,
       duration: formatDuration(flight['chiều_đi'].thời_gian_bay),
       price: parseInt(flight.thông_tin_chung.giá_vé),
@@ -363,6 +373,8 @@ export const fetchVietJetFlights = async (searchData: SearchFormData): Promise<F
         stop1: flight['chiều_đi'].điểm_dừng_1,
         waitTime: flight['chiều_đi'].thời_gian_chờ,
       } : undefined,
+      landingTime: flight['chiều_đi'].giờ_hạ_cánh,
+      landingDate: flight['chiều_đi'].ngày_hạ_cánh,
     }));
   } catch (error) {
     console.error('VietJet API error:', error);
@@ -460,6 +472,8 @@ export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): P
               stop1: flight.chiều_về.điểm_dừng_1,
               waitTime: flight.chiều_về.thời_gian_chờ,
             } : undefined,
+            landingTime: flight.chiều_về.giờ_hạ_cánh,
+            landingDate: flight.chiều_về.ngày_hạ_cánh,
           } : undefined,
           duration: formatDuration(flight.chiều_đi.thời_gian_bay),
           price: parseInt(flight.thông_tin_chung.giá_vé),
@@ -472,6 +486,8 @@ export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): P
             stop1: flight.chiều_đi.điểm_dừng_1,
             waitTime: flight.chiều_đi.thời_gian_chờ,
           } : undefined,
+          landingTime: flight.chiều_đi.giờ_hạ_cánh,
+          landingDate: flight.chiều_đi.ngày_hạ_cánh,
         });
       } else if (AIRLINE_NAMES[airlineCode]) {
         // Other airline flight
@@ -512,6 +528,8 @@ export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): P
               stop1: flight.chiều_về.điểm_dừng_1,
               waitTime: flight.chiều_về.thời_gian_chờ,
             } : undefined,
+            landingTime: flight.chiều_về.giờ_hạ_cánh,
+            landingDate: flight.chiều_về.ngày_hạ_cánh,
           } : undefined,
           duration: formatDuration(flight.chiều_đi.thời_gian_bay),
           price: parseInt(flight.thông_tin_chung.giá_vé),
@@ -522,6 +540,8 @@ export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): P
             stop1: flight.chiều_đi.điểm_dừng_1,
             waitTime: flight.chiều_đi.thời_gian_chờ,
           } : undefined,
+          landingTime: flight.chiều_đi.giờ_hạ_cánh,
+          landingDate: flight.chiều_đi.ngày_hạ_cánh,
         });
       }
     });
