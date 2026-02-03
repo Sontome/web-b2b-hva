@@ -121,31 +121,42 @@ export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHol
     return flight.return ? 'Khứ hồi' : 'Một chiều';
   };
 
-  const formatFlightWithStops = (flightLeg: any, isReturn = false) => {
+  const formatFlightWithStops = (isReturn = false) => {
     const departureInfo = isReturn ? flight.return?.departure : flight.departure;
     const arrivalInfo = isReturn ? flight.return?.arrival : flight.arrival;
+    const stopInfo = isReturn ? flight.return?.stopInfo : flight.stopInfo;
+    const landingTime = isReturn ? flight.return?.landingTime : flight.landingTime;
+    const landingDate = isReturn ? flight.return?.landingDate : flight.landingDate;
+    const stops = isReturn ? flight.return?.stops : flight.departure.stops;
     
     if (!departureInfo || !arrivalInfo) return '';
     
-    let flightInfo = `${departureInfo.airport}-${arrivalInfo.airport} ${departureInfo.time} ngày ${formatDate(departureInfo.date)}`;
-    
-    // Add stop information if flight has stops
-    if (departureInfo.stops > 0) {
-      // Get stop info from the original flight data
-      const stopInfo = isReturn ? flight.return?.stopInfo : flight.stopInfo;
-      if (stopInfo?.stop1 && stopInfo?.waitTime) {
-        flightInfo += ` (${stopInfo.stop1} : chờ ${stopInfo.waitTime} p)`;
-      }
+    // Direct flight - simple format
+    if (!stops || stops === 0 || !stopInfo?.stop1) {
+      return `${departureInfo.airport}-${arrivalInfo.airport} ${departureInfo.time} ngày ${formatDate(departureInfo.date)}`;
     }
     
-    return flightInfo;
+    // Flight with stops - detailed format
+    const legLabel = isReturn ? 'Chiều về' : 'Chiều đi';
+    const leg1 = `Chặng 1: ${departureInfo.airport} → ${stopInfo.stop1}: ${departureInfo.time} ngày ${formatDate(departureInfo.date)} (chờ ${stopInfo.waitTime})`;
+    const leg2Landing = landingTime && landingDate ? `${landingTime} ngày ${formatDate(landingDate)}` : arrivalInfo.time;
+    const leg2 = `Chặng 2: ${stopInfo.stop1} → ${arrivalInfo.airport}: ${leg2Landing}`;
+    
+    return `${legLabel}:\n${leg1}\n${leg2}`;
+  };
+
+  const hasStops = (isReturn = false) => {
+    const stops = isReturn ? flight.return?.stops : flight.departure.stops;
+    const stopInfo = isReturn ? flight.return?.stopInfo : flight.stopInfo;
+    return stops && stops > 0 && stopInfo?.stop1;
   };
 
   const handleCopyFlight = () => {
-    const outboundLine = formatFlightWithStops(flight.departure, false);
-    const returnLine = flight.return ? formatFlightWithStops(flight.return, true) : '';
+    const outboundLine = formatFlightWithStops(false);
+    const returnLine = flight.return ? formatFlightWithStops(true) : '';
     
-    const copyText = `${outboundLine}${returnLine ? `\n${returnLine}` : ''}
+    const copyText = `${outboundLine}${returnLine ? `\n\n${returnLine}` : ''}
+
 ${getBaggageInfo()}, giá vé = ${formatPrice(adjustedPrice)}w`;
 
     navigator.clipboard.writeText(copyText).then(() => {
@@ -217,41 +228,69 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(adjustedPrice)}w`;
           </div>
 
           {/* Flight Details */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {/* Outbound Flight */}
-            <div className="flex items-center justify-between text-sm transition-all duration-200">
-              <div className="flex items-center space-x-2">
-                <Plane className="w-4 h-4 text-blue-500 transition-colors duration-200" />
-                <span className={`font-medium transition-colors duration-200 ${isADT ? 'text-red-600' : ''}`}>
-                  {flight.departure.airport}-{flight.arrival.airport}
-                </span>
-                <span className={`transition-colors duration-200 ${isADT ? 'text-red-600' : ''}`}>{flight.departure.time}</span>
-                <span className={`transition-colors duration-200 ${isADT ? 'text-red-600' : ''}`}>ngày {formatDate(flight.departure.date)}</span>
-                {flight.departure.stops > 0 && flight.stopInfo?.stop1 && flight.stopInfo?.waitTime && (
-                  <span className="text-red-600 font-medium">
-                    ({flight.stopInfo.stop1} : chờ {flight.stopInfo.waitTime} p)
-                  </span>
-                )}
+            {hasStops(false) ? (
+              <div className="text-sm space-y-1">
+                <div className={`font-semibold ${isADT ? 'text-red-600' : 'text-foreground'}`}>
+                  Chiều đi:
+                </div>
+                <div className="flex items-start space-x-2 ml-2">
+                  <Plane className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <div className={isADT ? 'text-red-600' : ''}>
+                      Chặng 1: {flight.departure.airport} → {flight.stopInfo?.stop1}: {flight.departure.time} ngày {formatDate(flight.departure.date)} (chờ {flight.stopInfo?.waitTime})
+                    </div>
+                    <div className={isADT ? 'text-red-600' : ''}>
+                      Chặng 2: {flight.stopInfo?.stop1} → {flight.arrival.airport}: {flight.landingTime || flight.arrival.time} ngày {formatDate(flight.landingDate || flight.arrival.date)}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-2">
+                  <Plane className="w-4 h-4 text-primary" />
+                  <span className={`font-medium ${isADT ? 'text-red-600' : ''}`}>
+                    {flight.departure.airport}-{flight.arrival.airport}
+                  </span>
+                  <span className={isADT ? 'text-red-600' : ''}>{flight.departure.time}</span>
+                  <span className={isADT ? 'text-red-600' : ''}>ngày {formatDate(flight.departure.date)}</span>
+                </div>
+              </div>
+            )}
 
             {/* Return Flight (if applicable) */}
             {flight.return && (
-              <div className="flex items-center justify-between text-sm transition-all duration-200">
-                <div className="flex items-center space-x-2">
-                  <Plane className="w-4 h-4 text-blue-500 transform rotate-180 transition-all duration-200" />
-                  <span className={`font-medium transition-colors duration-200 ${isADT ? 'text-red-600' : ''}`}>
-                    {flight.return.departure.airport}-{flight.return.arrival.airport}
-                  </span>
-                  <span className={`transition-colors duration-200 ${isADT ? 'text-red-600' : ''}`}>{flight.return.departure.time}</span>
-                  <span className={`transition-colors duration-200 ${isADT ? 'text-red-600' : ''}`}>ngày {formatDate(flight.return.departure.date)}</span>
-                  {flight.return.stops > 0 && flight.return.stopInfo?.stop1 && flight.return.stopInfo?.waitTime && (
-                    <span className="text-red-600 font-medium">
-                      ({flight.return.stopInfo.stop1} : chờ {flight.return.stopInfo.waitTime} p)
-                    </span>
-                  )}
+              hasStops(true) ? (
+                <div className="text-sm space-y-1">
+                  <div className={`font-semibold ${isADT ? 'text-red-600' : 'text-foreground'}`}>
+                    Chiều về:
+                  </div>
+                  <div className="flex items-start space-x-2 ml-2">
+                    <Plane className="w-4 h-4 text-primary mt-0.5 flex-shrink-0 transform rotate-180" />
+                    <div className="space-y-1">
+                      <div className={isADT ? 'text-red-600' : ''}>
+                        Chặng 1: {flight.return.departure.airport} → {flight.return.stopInfo?.stop1}: {flight.return.departure.time} ngày {formatDate(flight.return.departure.date)} (chờ {flight.return.stopInfo?.waitTime})
+                      </div>
+                      <div className={isADT ? 'text-red-600' : ''}>
+                        Chặng 2: {flight.return.stopInfo?.stop1} → {flight.return.arrival.airport}: {flight.return.landingTime || flight.return.arrival.time} ngày {formatDate(flight.return.landingDate || flight.return.arrival.date)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-2">
+                    <Plane className="w-4 h-4 text-primary transform rotate-180" />
+                    <span className={`font-medium ${isADT ? 'text-red-600' : ''}`}>
+                      {flight.return.departure.airport}-{flight.return.arrival.airport}
+                    </span>
+                    <span className={isADT ? 'text-red-600' : ''}>{flight.return.departure.time}</span>
+                    <span className={isADT ? 'text-red-600' : ''}>ngày {formatDate(flight.return.departure.date)}</span>
+                  </div>
+                </div>
+              )
             )}
           </div>
 
