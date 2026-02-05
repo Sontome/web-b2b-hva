@@ -87,18 +87,18 @@ export const TopNavbar = ({
                 <DropdownMenuContent className="w-56 bg-background z-[200]" align="end">
                   {profile?.perm_get_ticket_image && onShowPNRModal && (
                     <DropdownMenuItem onClick={onShowPNRModal}>
-                      Lấy ảnh mặt vé
+                      Ảnh vé đã xuất
                     </DropdownMenuItem>
                   )}
                   {profile?.perm_send_ticket && onShowEmailModal && (
                     <DropdownMenuItem onClick={onShowEmailModal}>
-                      Gửi mặt vé
+                      Send email
                     </DropdownMenuItem>
                   )}
                   {profile?.perm_get_pending_ticket && onShowVJTicketModal && onShowVNATicketModal && (
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
-                        Lấy ảnh mặt vé chờ
+                        Ảnh vé chờ
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="bg-background z-[210]">
                         <DropdownMenuItem onClick={onShowVJTicketModal}>
