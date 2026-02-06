@@ -123,7 +123,7 @@ export const VNABookingModal = ({
     const lastName = removeVietnameseDiacritics(passenger.Họ.trim()).toUpperCase();
     const firstName = removeVietnameseDiacritics(passenger.Tên.trim()).toUpperCase().replace(/\s+/g, ' ');
     const gender = passenger.type === 'trẻ_em' 
-      ? (passenger.Giới_tính === 'nam' ? 'MSTR' : 'MISS')
+      ? (passenger.Giới_tính === 'nam' ? 'MASTER' : 'MISS')
       : (passenger.Giới_tính === 'nam' ? 'MR' : 'MS');
     const ageType = passenger.type === 'người_lớn' ? 'ADT' : 'CHD';
     
@@ -133,7 +133,7 @@ export const VNABookingModal = ({
     if (passenger.infant && passenger.infant.Họ && passenger.infant.Tên) {
       const infantLastName = removeVietnameseDiacritics(passenger.infant.Họ.trim()).toUpperCase();
       const infantFirstName = removeVietnameseDiacritics(passenger.infant.Tên.trim()).toUpperCase().replace(/\s+/g, ' ');
-      const infantGender = passenger.infant.Giới_tính === 'nam' ? 'MSTR' : 'MISS';
+      const infantGender = passenger.infant.Giới_tính === 'nam' ? 'MASTER' : 'MISS';
       formattedName += `(INF${infantLastName}/${infantFirstName} ${infantGender})`;
     }
     
