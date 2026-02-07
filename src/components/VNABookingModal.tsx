@@ -7,11 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2, Copy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { format, differenceInYears, differenceInDays } from 'date-fns';
+import { DateInput } from './DateInput';
 
 interface InfantInfo {
   Họ: string;
   Tên: string;
   Giới_tính: 'nam' | 'nữ';
+  Ngày_sinh?: Date;
 }
 
 interface PassengerInfo {
@@ -20,6 +23,7 @@ interface PassengerInfo {
   Giới_tính: 'nam' | 'nữ';
   type: 'người_lớn' | 'trẻ_em';
   infant?: InfantInfo;
+  Ngày_sinh?: Date;
 }
 
 interface VNABookingModalProps {
@@ -86,7 +90,14 @@ export const VNABookingModal = ({
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     return `${day}${months[parseInt(month) - 1]}`;
   };
-
+  // Format date of birth to API format (01JAN18)
+  const formatDOBForAPI = (date: Date) => {
+    const day = format(date, 'dd');
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const month = months[date.getMonth()];
+    const year = format(date, 'yy');
+    return `${day}${month}${year}`;
+  };
   const removeVietnameseDiacritics = (str: string) => {
     const vietnameseMap: { [key: string]: string } = {
       'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
@@ -118,7 +129,23 @@ export const VNABookingModal = ({
     };
     return str.split('').map(char => vietnameseMap[char] || char).join('');
   };
+  // Validate child age (2-12 years)
+  const validateChildAge = (dob: Date): boolean => {
+    const today = new Date();
+    const ageInYears = differenceInYears(today, dob);
+    const ageInDays = differenceInDays(today, dob);
+    const twoYearsInDays = 2 * 365;
+    const twelveYearsInDays = 12 * 365;
+    return ageInDays >= twoYearsInDays && ageInDays < twelveYearsInDays;
+  };
 
+  // Validate infant age (under 2 years)
+  const validateInfantAge = (dob: Date): boolean => {
+    const today = new Date();
+    const ageInDays = differenceInDays(today, dob);
+    const twoYearsInDays = 2 * 365;
+    return ageInDays >= 0 && ageInDays < twoYearsInDays;
+  };
   const formatNameForAPI = (passenger: PassengerInfo) => {
     const lastName = removeVietnameseDiacritics(passenger.Họ.trim()).toUpperCase();
     const firstName = removeVietnameseDiacritics(passenger.Tên.trim()).toUpperCase().replace(/\s+/g, ' ');
@@ -127,14 +154,23 @@ export const VNABookingModal = ({
       : (passenger.Giới_tính === 'nam' ? 'MR' : 'MS');
     const ageType = passenger.type === 'người_lớn' ? 'ADT' : 'CHD';
     
-    let formattedName = `${lastName}/${firstName},${gender}(${ageType})`;
+    let formattedName: string;
+    
+    // Add DOB for children
+    if (passenger.type === 'trẻ_em' && passenger.Ngày_sinh) {
+      const dobFormatted = formatDOBForAPI(passenger.Ngày_sinh);
+      formattedName = `${lastName}/${firstName},${gender}(${ageType}/${dobFormatted})`;
+    } else {
+      formattedName = `${lastName}/${firstName},${gender}(${ageType})`;
+    }
     
     // Add infant if present
-    if (passenger.infant && passenger.infant.Họ && passenger.infant.Tên) {
+    if (passenger.infant && passenger.infant.Họ && passenger.infant.Tên && passenger.infant.Ngày_sinh) {
       const infantLastName = removeVietnameseDiacritics(passenger.infant.Họ.trim()).toUpperCase();
       const infantFirstName = removeVietnameseDiacritics(passenger.infant.Tên.trim()).toUpperCase().replace(/\s+/g, ' ');
       const infantGender = passenger.infant.Giới_tính === 'nam' ? 'MSTR' : 'MISS';
-      formattedName += `(INF${infantLastName}/${infantFirstName},${infantGender})`;
+      const infantDOB = formatDOBForAPI(passenger.infant.Ngày_sinh);
+      formattedName += `(INF${infantLastName}/${infantFirstName},${infantGender}/${infantDOB})`;
     }
     
     return formattedName;
@@ -146,6 +182,10 @@ export const VNABookingModal = ({
       newPassengers[index][field] = value as 'nam' | 'nữ';
     } else if (field === 'type') {
       newPassengers[index][field] = value as 'người_lớn' | 'trẻ_em';
+      // Clear DOB when switching types
+      if (value === 'người_lớn') {
+        delete newPassengers[index].Ngày_sinh;
+      }
     } else if (field === 'Họ' || field === 'Tên') {
       newPassengers[index][field] = value as string;
     }
@@ -210,10 +250,25 @@ export const VNABookingModal = ({
         if (!passenger.Họ.trim() || !passenger.Tên.trim()) {
           throw new Error("Vui lòng điền đầy đủ thông tin hành khách");
         }
+        // Validate child DOB
+        if (passenger.type === 'trẻ_em') {
+          if (!passenger.Ngày_sinh) {
+            throw new Error("Vui lòng chọn ngày sinh cho trẻ em");
+          }
+          if (!validateChildAge(passenger.Ngày_sinh)) {
+            throw new Error("Trẻ em phải từ 2 đến 12 tuổi");
+          }
+        }
         // Validate infant if present
         if (passenger.infant && (passenger.infant.Họ || passenger.infant.Tên)) {
           if (!passenger.infant.Họ.trim() || !passenger.infant.Tên.trim()) {
             throw new Error("Vui lòng điền đầy đủ thông tin trẻ sơ sinh");
+          }
+          if (!passenger.infant.Ngày_sinh) {
+            throw new Error("Vui lòng chọn ngày sinh cho trẻ sơ sinh");
+          }
+          if (!validateInfantAge(passenger.infant.Ngày_sinh)) {
+            throw new Error("Trẻ sơ sinh phải dưới 2 tuổi");
           }
         }
       }
@@ -313,7 +368,10 @@ export const VNABookingModal = ({
       setIsLoading(false);
     }
   };
-
+  // Get date ranges for validation
+  const today = new Date();
+  const twoYearsAgo = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
+  const twelveYearsAgo = new Date(today.getFullYear() - 12, today.getMonth(), today.getDate());
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -390,7 +448,29 @@ export const VNABookingModal = ({
                     </Select>
                   </div>
                 </div>
-
+                {/* Date of birth for children */}
+                {passenger.type === 'trẻ_em' && (
+                  <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
+                    <Label className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                      Ngày sinh trẻ em (bắt buộc - từ 2-12 tuổi)
+                    </Label>
+                    <DateInput
+                      value={passenger.Ngày_sinh}
+                      onChange={(date) => {
+                        const newPassengers = [...passengers];
+                        newPassengers[index].Ngày_sinh = date;
+                        setPassengers(newPassengers);
+                      }}
+                      placeholder="VD: 30/10/2018"
+                      className="mt-2"
+                      minDate={twelveYearsAgo}
+                      maxDate={twoYearsAgo}
+                    />
+                    {passenger.Ngày_sinh && !validateChildAge(passenger.Ngày_sinh) && (
+                      <p className="text-xs text-destructive mt-1">Trẻ em phải từ 2 đến 12 tuổi</p>
+                    )}
+                  </div>
+                )}
                 {/* Infant section - only for adults */}
                 {passenger.type === 'người_lớn' && (
                   <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-3">
@@ -464,6 +544,32 @@ export const VNABookingModal = ({
                         </Select>
                       </div>
                     </div>
+                    {/* Date of birth for infant - show when infant info is being filled */}
+                    {(passenger.infant?.Họ || passenger.infant?.Tên) && (
+                      <div className="mt-2">
+                        <Label className="text-xs text-blue-800 dark:text-blue-200">
+                          Ngày sinh trẻ sơ sinh (bắt buộc - dưới 2 tuổi)
+                        </Label>
+                        <DateInput
+                          value={passenger.infant?.Ngày_sinh}
+                          onChange={(date) => {
+                            const newPassengers = [...passengers];
+                            if (!newPassengers[index].infant) {
+                              newPassengers[index].infant = { Họ: '', Tên: '', Giới_tính: 'nam' };
+                            }
+                            newPassengers[index].infant!.Ngày_sinh = date;
+                            setPassengers(newPassengers);
+                          }}
+                          placeholder="VD: 15/06/2024"
+                          className="mt-1 h-9 text-xs"
+                          minDate={twoYearsAgo}
+                          maxDate={today}
+                        />
+                        {passenger.infant?.Ngày_sinh && !validateInfantAge(passenger.infant.Ngày_sinh) && (
+                          <p className="text-xs text-destructive mt-1">Trẻ sơ sinh phải dưới 2 tuổi</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
