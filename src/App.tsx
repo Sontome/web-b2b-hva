@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import PendingTickets from "./pages/PendingTickets";
 import HeldTickets from "./pages/HeldTickets";
 import PriceMonitor from "./pages/PriceMonitor";
+import KakaoNoti from "./pages/KakaoNoti";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,11 @@ const App = () => (
             <Route path="/admin/pending-tickets" element={
               <ProtectedRoute>
                 <PendingTickets />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/kakanoti" element={
+              <ProtectedRoute>
+                <KakaoNoti />
               </ProtectedRoute>
             } />
             <Route path="/cart" element={
