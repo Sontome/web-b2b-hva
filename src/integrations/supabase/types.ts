@@ -50,6 +50,30 @@ export type Database = {
         }
         Relationships: []
       }
+      kakanoti: {
+        Row: {
+          id: string
+          name: string
+          phone: string | null
+          pnr: string
+          timecreat: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          phone?: string | null
+          pnr: string
+          timecreat?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          phone?: string | null
+          pnr?: string
+          timecreat?: string
+        }
+        Relationships: []
+      }
       monitored_flights: {
         Row: {
           airline: string
@@ -308,6 +332,21 @@ export type Database = {
           search_data?: Json | null
           searched_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      sent_phone: {
+        Row: {
+          phone: string
+          sent_at: string
+        }
+        Insert: {
+          phone: string
+          sent_at?: string
+        }
+        Update: {
+          phone?: string
+          sent_at?: string
         }
         Relationships: []
       }
