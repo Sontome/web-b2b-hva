@@ -62,7 +62,7 @@ export default function KakaoNoti() {
         name: r.name,
         pnr: r.pnr,
         timecreat: r.timecreat,
-        isSent: r.phone ? sentPhones.has(r.phone) : false,
+        isSent: r.row_sent,
       }));
 
       setRecords(mapped);
