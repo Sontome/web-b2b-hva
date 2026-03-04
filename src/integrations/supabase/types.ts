@@ -57,6 +57,7 @@ export type Database = {
           phone: string | null
           pnr: string
           timecreat: string
+          row_sent: boolean
         }
         Insert: {
           id?: string
