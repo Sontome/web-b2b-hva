@@ -143,7 +143,7 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
     for (const pnr of pnrs) {
       try {
         const response = await fetch(
-          `https://thuhongtour.com/beginReprice?pnr=${pnr}`
+          `https://apilive.hanvietair.com/beginReprice?pnr=${pnr}`
         );
         
         const data = await response.json();
@@ -218,7 +218,7 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
       try {
         const pnrCustomerType = customerTypes[result.pnr] || 'VFR';
         const response = await fetch(
-          `https://thuhongtour.com/reprice?pnr=${result.pnr}&doituong=${pnrCustomerType}`
+          `https://apilive.hanvietair.com/reprice?pnr=${result.pnr}&doituong=${pnrCustomerType}`
         );
         
         const data = await response.json();
