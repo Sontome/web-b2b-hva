@@ -66,7 +66,7 @@ export const PNRCheckModal = ({ isOpen, onClose }: PNRCheckModalProps) => {
   
     try {
       // API mới trả PNG
-      const listResponse = await fetch('https://thuhongtour.com/list-pnr-v2', {
+      const listResponse = await fetch('https://apilive.hanvietair.com/list-pnr-v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
