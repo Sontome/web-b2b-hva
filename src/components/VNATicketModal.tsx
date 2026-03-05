@@ -101,7 +101,7 @@ export const VNATicketModal: React.FC<VNATicketModalProps> = ({ isOpen, onClose,
 
     setIsLoading(true);
     try {
-      const response = await fetch(`https://thuhongtour.com/checkvechoVNA?pnr=${checkPnr.trim()}`, {
+      const response = await fetch(`https://apilive.hanvietair.com/checkvechoVNA?pnr=${checkPnr.trim()}`, {
         method: "GET",
         headers: {
           accept: "application/json",
