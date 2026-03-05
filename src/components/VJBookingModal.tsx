@@ -431,7 +431,7 @@ export const BookingModal = ({
       };
 
       setIsLoading(true);
-      const response = await fetch("https://thuhongtour.com/vj/booking", {
+      const response = await fetch("https://apilive.hanvietair.com/vj/booking", {
         method: "POST",
         headers: { accept: "application/json", "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
