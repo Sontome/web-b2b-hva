@@ -300,7 +300,7 @@ export const VNABookingModal = ({
       }
 
       setIsLoading(true);
-      const response = await fetch(`https://thuhongtour.com/giuveVNAlive?${params.toString()}`, {
+      const response = await fetch(`https://apilive.hanvietair.com/giuveVNAlive?${params.toString()}`, {
         method: 'POST',
         headers: { 'accept': 'application/json' }
       });
