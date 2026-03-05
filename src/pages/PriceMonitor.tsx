@@ -561,7 +561,7 @@ export default function PriceMonitor() {
       }
 
       // Call VJ API directly
-      const response = await fetch("https://thuhongtour.com/vj/check-ve-v2", {
+      const response = await fetch("https://apilive.hanvietair.com/vj/check-ve-v2", {
         method: "POST",
         headers: {
           accept: "application/json",
@@ -762,7 +762,7 @@ export default function PriceMonitor() {
       console.log("VNA Check with reprice_pnr:", repricePnr);
 
       // Step 1: Call checkvechoVNA with reprice_pnr
-      const checkResponse = await fetch(`https://thuhongtour.com/checkvechoVNA?pnr=${repricePnr}`, {
+      const checkResponse = await fetch(`https://apilive.hanvietair.com/checkvechoVNA?pnr=${repricePnr}`, {
         method: "GET",
         headers: { accept: "application/json" },
       });
@@ -797,7 +797,7 @@ export default function PriceMonitor() {
         
         try {
           // Call reprice API
-          const repriceResponse = await fetch(`https://thuhongtour.com/reprice?pnr=${repricePnr}&doituong=${ticketClass}`, {
+          const repriceResponse = await fetch(`https://apilive.hanvietair.com/reprice?pnr=${repricePnr}&doituong=${ticketClass}`, {
             method: "GET",
             headers: { accept: "application/json" },
           });
@@ -812,7 +812,7 @@ export default function PriceMonitor() {
           // Check if reprice was successful (has pricegoc and pricemoi)
           if (repriceData && repriceData.pricegoc && repriceData.pricemoi) {
             // Call checkvechoVNA again to get new price (tongbillgiagoc)
-            const reCheckResponse = await fetch(`https://thuhongtour.com/checkvechoVNA?pnr=${repricePnr}`, {
+            const reCheckResponse = await fetch(`https://apilive.hanvietair.com/checkvechoVNA?pnr=${repricePnr}`, {
               method: "GET",
               headers: { accept: "application/json" },
             });
@@ -1042,7 +1042,7 @@ export default function PriceMonitor() {
       params.append('hanhkhach', formattedName);
     }
 
-    const response = await fetch(`https://thuhongtour.com/giuveVNAlive?${params.toString()}`, {
+    const response = await fetch(`https://apilive.hanvietair.com/giuveVNAlive?${params.toString()}`, {
       method: 'POST',
       headers: { 'accept': 'application/json' }
     });
@@ -1222,7 +1222,7 @@ export default function PriceMonitor() {
     // Always check old PNR payment status first (regardless of perm_check_vna_issued setting)
     if (flight.pnr) {
       try {
-        const checkPnrResponse = await fetch(`https://thuhongtour.com/checkvechoVNA?pnr=${flight.pnr}`, {
+        const checkPnrResponse = await fetch(`https://apilive.hanvietair.com/checkvechoVNA?pnr=${flight.pnr}`, {
           method: 'GET',
           headers: { accept: 'application/json' }
         });
@@ -1238,7 +1238,7 @@ export default function PriceMonitor() {
             const ticketClass = segments[0]?.ticket_class || 'VFR';
             
             try {
-              const repriceResponse = await fetch(`https://thuhongtour.com/reprice?pnr=${flight.pnr}&doituong=${ticketClass}`, {
+              const repriceResponse = await fetch(`https://apilive.hanvietair.com/reprice?pnr=${flight.pnr}&doituong=${ticketClass}`, {
                 method: 'GET',
                 headers: { accept: 'application/json' }
               });
@@ -1440,7 +1440,7 @@ export default function PriceMonitor() {
       params.append('hanhkhach', formattedName);
     }
 
-    const response = await fetch(`https://thuhongtour.com/giuveVNAlive?${params.toString()}`, {
+    const response = await fetch(`https://apilive.hanvietair.com/giuveVNAlive?${params.toString()}`, {
       method: 'POST',
       headers: { 'accept': 'application/json' }
     });
@@ -1582,7 +1582,7 @@ export default function PriceMonitor() {
     // Check if old PNR is already issued before holding new ticket
     if (flight.pnr) {
       try {
-        const checkPnrResponse = await fetch(`https://thuhongtour.com/vj/checkpnr?pnr=${flight.pnr}`, {
+        const checkPnrResponse = await fetch(`https://apilive.hanvietair.com/vj/checkpnr?pnr=${flight.pnr}`, {
           method: 'POST',
         });
         
@@ -1622,7 +1622,7 @@ export default function PriceMonitor() {
     }
 
     // Call VJ booking API
-    const response = await fetch("https://thuhongtour.com/vj/booking", {
+    const response = await fetch("https://apilive.hanvietair.com/vj/booking", {
       method: "POST",
       headers: {
         accept: "application/json",
@@ -1786,7 +1786,7 @@ export default function PriceMonitor() {
     try {
       // Handle VNA PNR
       if (pnrAirline === "VNA") {
-        const response = await fetch(`https://thuhongtour.com/checkvechoVNA?pnr=${pnrCode}`, {
+        const response = await fetch(`https://apilive.hanvietair.com/checkvechoVNA?pnr=${pnrCode}`, {
           method: "GET",
           headers: {
             accept: "application/json",
@@ -1971,7 +1971,7 @@ export default function PriceMonitor() {
       }
 
       // Handle VJ PNR
-      const response = await fetch(`https://thuhongtour.com/vj/checkpnr?pnr=${pnrCode}`, {
+      const response = await fetch(`https://apilive.hanvietair.com/vj/checkpnr?pnr=${pnrCode}`, {
         method: "POST",
         headers: {
           accept: "application/json",
