@@ -29,7 +29,7 @@ export const searchLowFare = async (
   returnDate: string
 ): Promise<LowFareResponse> => {
   try {
-    const response = await fetch('https://thuhongtour.com/vj/lowfare-v2', {
+    const response = await fetch('https://apilive.hanvietair.com/vj/lowfare-v2', {
       method: 'POST',
       headers: {
         'accept': 'application/json',
