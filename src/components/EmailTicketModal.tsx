@@ -132,7 +132,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
         ]
       };
 
-      const response = await fetch('https://thuhongtour.com/proxy-gas', {
+      const response = await fetch('https://apilive.hanvietair.com/proxy-gas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
