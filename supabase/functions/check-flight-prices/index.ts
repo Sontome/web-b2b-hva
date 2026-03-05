@@ -46,7 +46,7 @@ async function checkVJPrice(flight: MonitoredFlight): Promise<number | null> {
 
     console.log('Checking VJ price for:', requestBody);
 
-    const response = await fetch('https://thuhongtour.com/vj/check-ve-v2', {
+    const response = await fetch('https://apilive.hanvietair.com/vj/check-ve-v2', {
       method: 'POST',
       headers: {
         'accept': 'application/json',
@@ -139,7 +139,7 @@ async function checkVNAPrice(flight: MonitoredFlight): Promise<number | null> {
       session_key: ''
     };
 
-    const response = await fetch('https://thuhongtour.com/vna/check-ve-v2', {
+    const response = await fetch('https://apilive.hanvietair.com/vna/check-ve-v2', {
       method: 'POST',
       headers: {
         'accept': 'application/json',
