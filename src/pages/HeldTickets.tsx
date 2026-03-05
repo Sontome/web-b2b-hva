@@ -67,7 +67,7 @@ export default function HeldTickets() {
       if (isVNA(ticket)) continue; // Only check VJ tickets
 
       try {
-        const response = await fetch(`https://thuhongtour.com/vj/checkpnr?pnr=${ticket.pnr}`, {
+        const response = await fetch(`https://apilive.hanvietair.com/vj/checkpnr?pnr=${ticket.pnr}`, {
           method: "POST",
         });
 
@@ -231,7 +231,7 @@ export default function HeldTickets() {
     // Check payment status for VJ tickets
     if (!isVNA) {
       try {
-        const response = await fetch(`https://thuhongtour.com/vj/checkpnr?pnr=${pnr}`, {
+        const response = await fetch(`https://apilive.hanvietair.com/vj/checkpnr?pnr=${pnr}`, {
           method: "POST",
         });
 
@@ -283,7 +283,7 @@ export default function HeldTickets() {
       // Handle VNA PNR import
       setIsLoadingPnr(true);
       try {
-        const response = await fetch(`https://thuhongtour.com/checkvechoVNA?pnr=${selectedPnr}`);
+        const response = await fetch(`https://apilive.hanvietair.com/checkvechoVNA?pnr=${selectedPnr}`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch VNA PNR data");
@@ -438,7 +438,7 @@ export default function HeldTickets() {
 
     setIsLoadingPnr(true);
     try {
-      const response = await fetch(`https://thuhongtour.com/vj/checkpnr?pnr=${selectedPnr}`, {
+      const response = await fetch(`https://apilive.hanvietair.com/vj/checkpnr?pnr=${selectedPnr}`, {
         method: "POST",
         headers: {
           accept: "application/json",
