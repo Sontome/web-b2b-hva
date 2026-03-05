@@ -109,7 +109,7 @@ export const VJTicketModal: React.FC<VJTicketModalProps> = ({ isOpen, onClose, i
 
     setIsLoading(true);
     try {
-      const response = await fetch(`https://thuhongtour.com/vj/checkpnr?pnr=${checkPnr.trim()}`, {
+      const response = await fetch(`https://apilive.hanvietair.com/vj/checkpnr?pnr=${checkPnr.trim()}`, {
         method: "POST",
         headers: {
           accept: "application/json",
