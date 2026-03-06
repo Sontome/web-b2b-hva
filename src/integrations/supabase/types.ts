@@ -14,6 +14,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      always_send_phone: {
+        Row: {
+          phone: string
+        }
+        Insert: {
+          phone: string
+        }
+        Update: {
+          phone?: string
+        }
+        Relationships: []
+      }
       held_tickets: {
         Row: {
           created_at: string
@@ -56,22 +68,27 @@ export type Database = {
           name: string
           phone: string | null
           pnr: string
+          row_sent: boolean | null
           timecreat: string
-          row_sent: boolean
+          type: string | null
         }
         Insert: {
           id?: string
           name: string
           phone?: string | null
           pnr: string
+          row_sent?: boolean | null
           timecreat?: string
+          type?: string | null
         }
         Update: {
           id?: string
           name?: string
           phone?: string | null
           pnr?: string
+          row_sent?: boolean | null
           timecreat?: string
+          type?: string | null
         }
         Relationships: []
       }
@@ -351,6 +368,24 @@ export type Database = {
         }
         Relationships: []
       }
+      set_rate_limit: {
+        Row: {
+          id: string
+          minutes: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -377,6 +412,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_unsent_latest_kakao: {
+        Args: never
+        Returns: {
+          id: string
+          phone: string
+          pnr: string
+          type: string
+          wl: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -384,6 +429,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      sync_kakanoti_phone_sent: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
