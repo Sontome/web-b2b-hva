@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Settings, DollarSign, Mail, User, LogOut, Phone, Facebook, Ticket } from 'lucide-react';
+import { Users, Settings, DollarSign, Mail, User, LogOut, Phone, Facebook, Ticket, Clock, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +56,10 @@ export const AdminDashboard = () => {
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rateLimitMinutes, setRateLimitMinutes] = useState<number>(3);
+  const [rateLimitInput, setRateLimitInput] = useState<string>('3');
+  const [rateLimitDialogOpen, setRateLimitDialogOpen] = useState(false);
+  const [rateLimitLoading, setRateLimitLoading] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [editForm, setEditForm] = useState({
     full_name: '',
@@ -93,7 +97,45 @@ export const AdminDashboard = () => {
 
   useEffect(() => {
     fetchProfiles();
+    fetchRateLimit();
   }, []);
+
+  const fetchRateLimit = async () => {
+    const { data } = await supabase.from('set_rate_limit').select('minutes').limit(1).single();
+    if (data) {
+      setRateLimitMinutes(data.minutes);
+      setRateLimitInput(String(data.minutes));
+    }
+  };
+
+  const handleUpdateRateLimit = async () => {
+    const minutes = parseInt(rateLimitInput);
+    if (isNaN(minutes) || minutes < 0) {
+      toast({ variant: "destructive", title: "Lỗi", description: "Số phút phải >= 0" });
+      return;
+    }
+    setRateLimitLoading(true);
+    try {
+      // Call external API
+      await fetch('https://thuhongtour.com/admin/set-rate-limit', {
+        method: 'POST',
+        headers: { 'accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minutes }),
+      });
+      // Save to Supabase
+      const { data: existing } = await supabase.from('set_rate_limit').select('id').limit(1).single();
+      if (existing) {
+        await supabase.from('set_rate_limit').update({ minutes, updated_at: new Date().toISOString() }).eq('id', existing.id);
+      }
+      setRateLimitMinutes(minutes);
+      setRateLimitDialogOpen(false);
+      toast({ title: "Thành công", description: `Đã cập nhật thời gian giãn cách: ${minutes} phút` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Lỗi", description: "Không thể cập nhật" });
+    } finally {
+      setRateLimitLoading(false);
+    }
+  };
 
   const fetchProfiles = async () => {
     try {
@@ -405,6 +447,42 @@ export const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground">
                 Gửi thông báo Kakao
               </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Thời gian giãn cách</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{rateLimitMinutes} phút</div>
+              <Dialog open={rateLimitDialogOpen} onOpenChange={(open) => { setRateLimitDialogOpen(open); if (open) setRateLimitInput(String(rateLimitMinutes)); }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="mt-2">
+                    <Settings className="w-3 h-3 mr-1" /> Thay đổi
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-xs">
+                  <DialogHeader>
+                    <DialogTitle>Thay đổi thời gian giãn cách</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Số phút</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={rateLimitInput}
+                        onChange={(e) => setRateLimitInput(e.target.value)}
+                      />
+                    </div>
+                    <Button onClick={handleUpdateRateLimit} disabled={rateLimitLoading} className="w-full">
+                      <Check className="w-4 h-4 mr-1" /> OK
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </div>
