@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trash2, Plus, Edit2, RefreshCw, Copy, Filter } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Edit2, RefreshCw, Copy, Filter, FileSearch } from "lucide-react";
+import { VNATicketModal } from "@/components/VNATicketModal";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,6 +92,9 @@ const PendingTickets = () => {
     new_price: "",
     auto_reprice: true,
   });
+
+  // VNA Ticket Modal
+  const [vnaTicketPNR, setVnaTicketPNR] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile?.role !== "admin") {
@@ -498,6 +502,14 @@ const PendingTickets = () => {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={() => setVnaTicketPNR(record.pnr)}
+                              title="Xem vé VNA"
+                            >
+                              <FileSearch className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => handleOpenEditModal(record)}
                             >
                               <Edit2 className="w-4 h-4" />
@@ -647,6 +659,11 @@ const PendingTickets = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <VNATicketModal
+        isOpen={!!vnaTicketPNR}
+        onClose={() => setVnaTicketPNR(null)}
+        initialPNR={vnaTicketPNR || undefined}
+      />
     </div>
   );
 };
