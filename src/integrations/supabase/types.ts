@@ -412,6 +412,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_old_reprice: { Args: never; Returns: undefined }
       get_unsent_latest_kakao: {
         Args: never
         Returns: {
