@@ -80,6 +80,7 @@ const PendingTickets = () => {
     HVA: true,
     F2: true,
   });
+  const [hasNewPriceFilter, setHasNewPriceFilter] = useState(false);
 
   // Add/Edit modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -134,6 +135,9 @@ const PendingTickets = () => {
     if (emailTag === "F2" && !emailTagFilters.F2) return false;
     // If no email tag (null), show if either filter is enabled
     if (emailTag === null && !emailTagFilters.HVA && !emailTagFilters.F2) return false;
+
+    // Has new price filter
+    if (hasNewPriceFilter && !(record.new_price && record.new_price > 0)) return false;
 
     return true;
   });
@@ -429,6 +433,19 @@ const PendingTickets = () => {
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       <Badge className="bg-teal-500 text-white">F2</Badge>
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="filter-has-new-price"
+                      checked={hasNewPriceFilter}
+                      onCheckedChange={(checked) => setHasNewPriceFilter(!!checked)}
+                    />
+                    <label
+                      htmlFor="filter-has-new-price"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Có giá mới
                     </label>
                   </div>
                 </div>
