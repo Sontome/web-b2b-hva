@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trash2, Plus, Edit2, RefreshCw, Copy, Filter, FileSearch } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, RefreshCw, Copy, Filter, FileSearch, Search } from "lucide-react";
 import { VNATicketModal } from "@/components/VNATicketModal";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -81,6 +81,10 @@ const PendingTickets = () => {
     F2: true,
   });
   const [hasNewPriceFilter, setHasNewPriceFilter] = useState(false);
+  const [pnrSearch, setPnrSearch] = useState("");
+
+  // Refresh confirm
+  const [refreshRecord, setRefreshRecord] = useState<RepriceRecord | null>(null);
 
   // Add/Edit modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -129,6 +133,11 @@ const PendingTickets = () => {
       return false;
     }
 
+    // PNR search filter
+    if (pnrSearch.trim() && !record.pnr.toUpperCase().includes(pnrSearch.trim().toUpperCase())) {
+      return false;
+    }
+
     // Email tag filter
     const emailTag = getEmailTag(record.email);
     if (emailTag === "HVA" && !emailTagFilters.HVA) return false;
@@ -159,6 +168,34 @@ const PendingTickets = () => {
     } catch (error) {
       console.error("Error deleting record:", error);
       toast.error("Không thể xóa");
+    }
+  };
+
+  const handleRefreshConfirm = async () => {
+    if (!refreshRecord) return;
+    try {
+      if (refreshRecord.status === "HOLD" && !refreshRecord.auto_reprice) {
+        // Resume reprice: update created_at to now and enable auto_reprice
+        const { error } = await supabase
+          .from("reprice")
+          .update({ created_at: new Date().toISOString(), auto_reprice: true })
+          .eq("id", refreshRecord.id);
+        if (error) throw error;
+        toast.success("Đã tiếp tục reprice");
+      } else if (refreshRecord.status === "HOLD" && refreshRecord.auto_reprice) {
+        // Stop reprice: disable auto_reprice
+        const { error } = await supabase
+          .from("reprice")
+          .update({ auto_reprice: false })
+          .eq("id", refreshRecord.id);
+        if (error) throw error;
+        toast.success("Đã ngừng reprice");
+      }
+      setRefreshRecord(null);
+      fetchRepriceRecords();
+    } catch (error) {
+      console.error("Error updating reprice:", error);
+      toast.error("Không thể cập nhật");
     }
   };
 
@@ -382,8 +419,19 @@ const PendingTickets = () => {
               Bộ lọc
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-6">
+           <CardContent>
+            <div className="flex flex-wrap gap-6 items-end">
+              {/* PNR Search */}
+              <div className="space-y-2">
+                <Label>Tìm PNR</Label>
+                <Input
+                  placeholder="Nhập mã PNR..."
+                  value={pnrSearch}
+                  onChange={(e) => setPnrSearch(e.target.value)}
+                  className="w-[180px] uppercase"
+                />
+              </div>
+
               {/* Status Filter */}
               <div className="space-y-2">
                 <Label>Trạng thái</Label>
@@ -527,9 +575,19 @@ const PendingTickets = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleOpenEditModal(record)}
+                              disabled={record.status !== "HOLD"}
+                              onClick={() => {
+                                if (record.status === "HOLD") setRefreshRecord(record);
+                              }}
+                              title={
+                                record.status !== "HOLD"
+                                  ? "Chỉ áp dụng cho vé đang giữ"
+                                  : record.auto_reprice
+                                  ? "Ngừng reprice"
+                                  : "Tiếp tục reprice"
+                              }
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <RefreshCw className={`w-4 h-4 ${record.status === "HOLD" && record.auto_reprice ? "text-green-500" : ""}`} />
                             </Button>
                             <Button
                               variant="ghost"
@@ -672,6 +730,28 @@ const PendingTickets = () => {
             <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord}>
               Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Refresh Confirmation Dialog */}
+      <AlertDialog
+        open={!!refreshRecord}
+        onOpenChange={() => setRefreshRecord(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận</AlertDialogTitle>
+            <AlertDialogDescription>
+              {refreshRecord?.auto_reprice
+                ? `Ngừng reprice cho PNR ${refreshRecord?.pnr}?`
+                : `Tiếp tục reprice cho PNR ${refreshRecord?.pnr}? Ngày tạo sẽ được cập nhật thành hiện tại.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRefreshConfirm}>
+              Đồng ý
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
