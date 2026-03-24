@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Search, Pencil, Trash2, RefreshCw, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +40,7 @@ export default function KakaoNoti() {
   // Modal states
   const [showAddEdit, setShowAddEdit] = useState(false);
   const [editingRecord, setEditingRecord] = useState<KakaNotiRecord | null>(null);
-  const [formData, setFormData] = useState({ name: '', pnr: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', pnr: '', phone: '', rowSent: true });
   const [deleteRecord, setDeleteRecord] = useState<KakaNotiRecord | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -104,26 +105,18 @@ export default function KakaoNoti() {
 
   const handleOpenAdd = () => {
     setEditingRecord(null);
-    setFormData({ name: '', pnr: '', phone: '' });
+    setFormData({ name: '', pnr: '', phone: '', rowSent: true });
     setShowAddEdit(true);
   };
 
   const handleOpenEdit = (record: KakaNotiRecord) => {
     setEditingRecord(record);
-    setFormData({ name: record.name, pnr: record.pnr, phone: record.phone || '' });
+    setFormData({ name: record.name, pnr: record.pnr, phone: record.phone || '', rowSent: record.isSent });
     setShowAddEdit(true);
   };
 
   const handleSave = async () => {
-    const pnr = formData.pnr.trim().toUpperCase();
-    if (!/^([A-Z0-9]{6})(\s+[A-Z0-9]{6})*$/.test(pnr)) {
-      toast({
-        title: 'Lỗi',
-        description: 'Mỗi PNR phải 6 ký tự chữ/số, ngăn cách bằng dấu cách',
-        variant: 'destructive'
-      });
-      return;
-    }
+    const pnrRaw = formData.pnr.trim().toUpperCase();
     if (!formData.name.trim()) {
       toast({ title: 'Lỗi', description: 'Tên không được để trống', variant: 'destructive' });
       return;
@@ -134,21 +127,44 @@ export default function KakaoNoti() {
     setSaving(true);
     try {
       if (editingRecord) {
+        // Edit mode: single PNR
+        const pnr = pnrRaw;
+        if (!/^[A-Z0-9]{6}$/.test(pnr)) {
+          toast({ title: 'Lỗi', description: 'PNR phải 6 ký tự chữ/số', variant: 'destructive' });
+          setSaving(false);
+          return;
+        }
         const { error } = await supabase.from('kakanoti').update({
           name: formData.name.trim(),
           pnr,
           phone,
+          row_sent: formData.rowSent,
         }).eq('id', editingRecord.id);
         if (error) throw error;
         toast({ title: 'Đã cập nhật thành công' });
       } else {
-        const { error } = await supabase.from('kakanoti').insert({
+        // Add mode: multiple PNRs separated by spaces/commas/newlines
+        const pnrList = pnrRaw.split(/[\s,;]+/).filter(Boolean);
+        if (pnrList.length === 0) {
+          toast({ title: 'Lỗi', description: 'Vui lòng nhập ít nhất 1 PNR', variant: 'destructive' });
+          setSaving(false);
+          return;
+        }
+        const invalid = pnrList.filter(p => !/^[A-Z0-9]{6}$/.test(p));
+        if (invalid.length > 0) {
+          toast({ title: 'Lỗi', description: `PNR không hợp lệ: ${invalid.join(', ')}`, variant: 'destructive' });
+          setSaving(false);
+          return;
+        }
+        const rows = pnrList.map(pnr => ({
           name: formData.name.trim(),
           pnr,
           phone,
-        });
+          row_sent: formData.rowSent,
+        }));
+        const { error } = await supabase.from('kakanoti').upsert(rows, { onConflict: 'phone,pnr' });
         if (error) throw error;
-        toast({ title: 'Đã thêm thành công' });
+        toast({ title: `Đã thêm ${pnrList.length} PNR thành công` });
       }
       setShowAddEdit(false);
       fetchRecords();
@@ -370,14 +386,23 @@ export default function KakaoNoti() {
                 />
               </div>
               <div>
-                <Label>PNR *</Label>
-                <Input
-                  value={formData.pnr}
-                  onChange={e => setFormData(f => ({ ...f, pnr: e.target.value.toUpperCase() }))}
-                  placeholder="ABC123 ABC124"
-                  
-                  className="font-mono"
-                />
+                <Label>PNR * {!editingRecord && <span className="text-xs text-muted-foreground">(nhiều PNR cách nhau bằng dấu cách, dấu phẩy hoặc xuống dòng)</span>}</Label>
+                {editingRecord ? (
+                  <Input
+                    value={formData.pnr}
+                    onChange={e => setFormData(f => ({ ...f, pnr: e.target.value.toUpperCase() }))}
+                    placeholder="ABC123"
+                    maxLength={6}
+                    className="font-mono"
+                  />
+                ) : (
+                  <Textarea
+                    value={formData.pnr}
+                    onChange={e => setFormData(f => ({ ...f, pnr: e.target.value.toUpperCase() }))}
+                    placeholder="ABC123 DEF456 GHI789"
+                    className="font-mono min-h-[80px]"
+                  />
+                )}
               </div>
               <div>
                 <Label>Số điện thoại</Label>
@@ -387,6 +412,18 @@ export default function KakaoNoti() {
                   placeholder="01012345678"
                 />
                 <p className="text-xs text-muted-foreground mt-1">Tự động thêm số 0 nếu thiếu</p>
+              </div>
+              <div>
+                <Label>Trạng thái gửi</Label>
+                <Select value={formData.rowSent ? 'true' : 'false'} onValueChange={v => setFormData(f => ({ ...f, rowSent: v === 'true' }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Đã gửi</SelectItem>
+                    <SelectItem value="false">Chưa gửi</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowAddEdit(false)}>Hủy</Button>
