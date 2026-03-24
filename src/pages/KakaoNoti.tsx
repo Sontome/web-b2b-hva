@@ -370,7 +370,7 @@ export default function KakaoNoti() {
                 />
               </div>
               <div>
-                <Label>PNR * (6 ký tự)</Label>
+                <Label>PNR *</Label>
                 <Input
                   value={formData.pnr}
                   onChange={e => setFormData(f => ({ ...f, pnr: e.target.value.toUpperCase().slice(0, 6) }))}
