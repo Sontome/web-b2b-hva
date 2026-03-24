@@ -373,9 +373,9 @@ export default function KakaoNoti() {
                 <Label>PNR *</Label>
                 <Input
                   value={formData.pnr}
-                  onChange={e => setFormData(f => ({ ...f, pnr: e.target.value.toUpperCase().slice(0, 6) }))}
-                  placeholder="ABC123"
-                  maxLength={6}
+                  onChange={e => setFormData(f => ({ ...f, pnr: e.target.value.toUpperCase() }))}
+                  placeholder="ABC123 ABC124"
+                  
                   className="font-mono"
                 />
               </div>
