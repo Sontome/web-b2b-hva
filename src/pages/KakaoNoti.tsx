@@ -116,8 +116,12 @@ export default function KakaoNoti() {
 
   const handleSave = async () => {
     const pnr = formData.pnr.trim().toUpperCase();
-    if (!/^[A-Za-z0-9]{6}$/.test(pnr)) {
-      toast({ title: 'Lỗi', description: 'PNR phải đúng 6 ký tự chữ và số', variant: 'destructive' });
+    if (!/^([A-Z0-9]{6})(\s+[A-Z0-9]{6})*$/.test(pnr)) {
+      toast({
+        title: 'Lỗi',
+        description: 'Mỗi PNR phải 6 ký tự chữ/số, ngăn cách bằng dấu cách',
+        variant: 'destructive'
+      });
       return;
     }
     if (!formData.name.trim()) {
