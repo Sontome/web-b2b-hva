@@ -518,6 +518,7 @@ const PendingTickets = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
+                      <th className="text-center p-3 font-medium w-12">STT</th>
                       <th className="text-left p-3 font-medium">PNR</th>
                       <th className="text-left p-3 font-medium">Loại</th>
                       <th className="text-left p-3 font-medium">Email</th>
@@ -531,8 +532,9 @@ const PendingTickets = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRecords.map((record) => (
+                    {filteredRecords.map((record, index) => (
                       <tr key={record.id} className="border-b hover:bg-muted/50">
+                        <td className="p-3 text-center text-muted-foreground">{index + 1}</td>
                         <td className="p-3 font-mono font-semibold">{record.pnr}</td>
                         <td className="p-3">{getTypeBadge(record.type)}</td>
                         <td className="p-3">{getEmailBadge(record.email)}</td>
