@@ -293,6 +293,11 @@ export const VNABookingModal = ({
       
       params.append('doituong', doiTuong);
 
+      // Add user id
+      if (user) {
+        params.append('id_f2', user.id);
+      }
+
       // Add passengers in reverse order (last to first)
       for (let i = passengers.length - 1; i >= 0; i--) {
         const formattedName = formatNameForAPI(passengers[i]);
