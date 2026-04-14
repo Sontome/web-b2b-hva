@@ -173,6 +173,27 @@ export type Database = {
         }
         Relationships: []
       }
+      pnr_email: {
+        Row: {
+          email: string | null
+          id: string
+          pnr: string | null
+          timecreat: string | null
+        }
+        Insert: {
+          email?: string | null
+          id?: string
+          pnr?: string | null
+          timecreat?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          pnr?: string | null
+          timecreat?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -296,6 +317,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          id_f2: string | null
           last_checked_at: string | null
           new_price: number | null
           old_price: number | null
@@ -309,6 +331,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          id_f2?: string | null
           last_checked_at?: string | null
           new_price?: number | null
           old_price?: number | null
@@ -322,6 +345,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          id_f2?: string | null
           last_checked_at?: string | null
           new_price?: number | null
           old_price?: number | null
@@ -350,6 +374,54 @@ export type Database = {
           search_data?: Json | null
           searched_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      sent_delay_pnr: {
+        Row: {
+          email: string | null
+          error_message: string | null
+          hang: string | null
+          id: string
+          kakao_status: string | null
+          newtime: string | null
+          oldtime: string | null
+          phone: string | null
+          pnr: string | null
+          rcs_status: string | null
+          sent_at: string | null
+          timecreate: string | null
+          trip: string | null
+        }
+        Insert: {
+          email?: string | null
+          error_message?: string | null
+          hang?: string | null
+          id?: string
+          kakao_status?: string | null
+          newtime?: string | null
+          oldtime?: string | null
+          phone?: string | null
+          pnr?: string | null
+          rcs_status?: string | null
+          sent_at?: string | null
+          timecreate?: string | null
+          trip?: string | null
+        }
+        Update: {
+          email?: string | null
+          error_message?: string | null
+          hang?: string | null
+          id?: string
+          kakao_status?: string | null
+          newtime?: string | null
+          oldtime?: string | null
+          phone?: string | null
+          pnr?: string | null
+          rcs_status?: string | null
+          sent_at?: string | null
+          timecreate?: string | null
+          trip?: string | null
         }
         Relationships: []
       }
@@ -412,7 +484,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clear_sent_phone: { Args: never; Returns: number }
       delete_old_reprice: { Args: never; Returns: undefined }
+      get_phone_email_to_pnr: {
+        Args: { pnr_input: string }
+        Returns: {
+          email: string
+          name: string
+          phone: string
+        }[]
+      }
       get_unsent_latest_kakao: {
         Args: never
         Returns: {
