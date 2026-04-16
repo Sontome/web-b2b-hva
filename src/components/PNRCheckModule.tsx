@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, Send } from "lucide-react";
 
 interface PNRData {
   count: number;
@@ -15,11 +15,27 @@ interface PNRCheckModuleProps {
   pnrInput: string;
 }
 
+const callTicketForPNR = async (pnr: string) => {
+  const vjRes = await fetch(
+    `https://apilive.hanvietair.com/sendmail_vj?pnr=${pnr}`,
+    { headers: { accept: "application/json" } }
+  );
+  const vjText = await vjRes.text();
+
+  if (vjText.trim() !== '"VJ"' && vjText.trim() !== "VJ") {
+    await fetch(
+      `https://apilive.hanvietair.com/sendmailvnamulti?code=${pnr}&ssid=sendmailmulti`,
+      { headers: { accept: "application/json" } }
+    );
+  }
+};
+
 export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
   const [results, setResults] = useState<Record<string, PNRData>>({});
   const [isChecking, setIsChecking] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
+  const [rowLoading, setRowLoading] = useState<Record<string, boolean>>({});
 
   const parsePNRs = (input: string): string[] => {
     const pnrs = input
@@ -83,18 +99,7 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
       }));
 
       try {
-        const vjRes = await fetch(
-          `https://apilive.hanvietair.com/sendmail_vj?pnr=${pnr}`,
-          { headers: { accept: "application/json" } }
-        );
-        const vjText = await vjRes.text();
-
-        if (vjText.trim() !== '"VJ"' && vjText.trim() !== "VJ") {
-          await fetch(
-            `https://apilive.hanvietair.com/sendmailvnamulti?code=${pnr}&ssid=sendmailmulti`,
-            { headers: { accept: "application/json" } }
-          );
-        }
+        await callTicketForPNR(pnr);
       } catch (err) {
         console.error(`Error calling ticket for ${pnr}:`, err);
       }
@@ -107,6 +112,24 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
 
     setIsCalling(false);
     toast.success("Đã gọi mặt vé gốc cho tất cả PNR!");
+  };
+
+  const handleCallSinglePNR = async (pnr: string) => {
+    setRowLoading((prev) => ({ ...prev, [pnr]: true }));
+
+    try {
+      await callTicketForPNR(pnr);
+      setResults((prev) => ({
+        ...prev,
+        [pnr]: { ...prev[pnr], status: "called" },
+      }));
+      toast.success(`Đã gửi mặt vé cho PNR ${pnr}`);
+    } catch (err) {
+      console.error(`Error calling ticket for ${pnr}:`, err);
+      toast.error(`Lỗi khi gửi mặt vé cho PNR ${pnr}`);
+    } finally {
+      setRowLoading((prev) => ({ ...prev, [pnr]: false }));
+    }
   };
 
   if (!hasChecked) {
@@ -135,7 +158,6 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
 
   return (
     <div className="space-y-3">
-      {/* Inline check button after first check */}
       <div className="flex items-center gap-2">
         <Button
           type="button"
@@ -172,7 +194,6 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
         </Button>
       </div>
 
-      {/* Results table */}
       <div className="rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
@@ -181,17 +202,19 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
               <TableHead className="font-semibold text-xs">Hãng</TableHead>
               <TableHead className="font-semibold text-xs">Số người</TableHead>
               <TableHead className="font-semibold text-xs">Trạng thái</TableHead>
+              <TableHead className="font-semibold text-xs">Hành động</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {pnrEntries.map(([pnr, data]) => {
               const isZero = data.count === 0;
               const isCalled = data.status === "called";
-              const isCalling = data.status === "calling";
+              const isCallingRow = data.status === "calling";
+              const isRowLoading = rowLoading[pnr] || false;
 
               let rowClass = "bg-blue-50/50 dark:bg-blue-950/10";
               if (isCalled) rowClass = "bg-green-50 dark:bg-green-950/20";
-              else if (isCalling) rowClass = "bg-yellow-50 dark:bg-yellow-950/20";
+              else if (isCallingRow) rowClass = "bg-yellow-50 dark:bg-yellow-950/20";
               else if (isZero) rowClass = "bg-red-50 dark:bg-red-950/20";
 
               return (
@@ -205,7 +228,7 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
                     </span>
                   </TableCell>
                   <TableCell className="text-xs py-1.5">
-                    {isCalling ? (
+                    {isCallingRow || isRowLoading ? (
                       <span className="inline-flex items-center gap-1 text-yellow-600">
                         <Loader2 className="w-3 h-3 animate-spin" />
                         Đang gọi...
@@ -217,6 +240,28 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
                     ) : (
                       <span className="text-green-600">Có sẵn</span>
                     )}
+                  </TableCell>
+                  <TableCell className="text-xs py-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      disabled={isRowLoading || isCallingRow}
+                      onClick={() => handleCallSinglePNR(pnr)}
+                    >
+                      {isRowLoading ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Đang gửi...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3 h-3 mr-1" />
+                          Gửi riêng
+                        </>
+                      )}
+                    </Button>
                   </TableCell>
                 </TableRow>
               );
