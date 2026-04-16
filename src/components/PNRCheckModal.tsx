@@ -236,7 +236,7 @@ export const PNRCheckModal = ({
                 disabled={isLoading || !pnrCode.trim()}
                 className="whitespace-nowrap"
               >
-                {isLoading ? "Đang kiểm tra..." : "Kiểm tra"}
+                {isLoading ? "Đang kiểm tra..." : "Lấy ảnh vé"}
               </Button>
             </div>
           </div>
