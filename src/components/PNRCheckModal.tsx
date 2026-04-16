@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 import { Copy, Download, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect } from "react";
 
 interface PNRCheckModalProps {
   isOpen: boolean;
@@ -26,127 +25,175 @@ interface PNRFile {
   blob?: Blob;
 }
 
-export const PNRCheckModal = ({ isOpen, onClose }: PNRCheckModalProps) => {
+export const PNRCheckModal = ({
+  isOpen,
+  onClose,
+}: PNRCheckModalProps) => {
   const [pnrCode, setPnrCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<PNRFile[]>([]);
-  const [banner, setBanner] = useState(" ");
+  const [banner, setBanner] = useState(' ');
+
+  const { user } = useAuth();
+
   const handleClose = () => {
     setPnrCode('');
     setFiles([]);
     onClose();
   };
-  const { user } = useAuth();
-  
-  
+
+  // ==================================
+  // Load banner user
+  // ==================================
   const loadUserBanner = async () => {
     if (!user?.id) return;
-  
-    const { data: profile, error } = await supabase
+
+    const { data } = await supabase
       .from('profiles')
       .select('banner')
       .eq('id', user.id)
       .single();
-  
-    setBanner(profile?.banner || " ");
+
+    setBanner(data?.banner || ' ');
   };
+
   useEffect(() => {
     if (isOpen) {
       loadUserBanner();
     }
   }, [isOpen]);
+
+  // ==================================
+  // Parse nhiều PNR
+  // ==================================
+  const parsePNRs = (input: string): string[] => {
+    const pnrs = input
+      .toUpperCase()
+      .split(/[\s,;\n\r]+/)
+      .map((p) => p.trim())
+      .filter((p) => /^[A-Z0-9]{6}$/.test(p));
+
+    return [...new Set(pnrs)];
+  };
+
+  // ==================================
+  // Check nhiều PNR
+  // ==================================
   const handleCheck = async () => {
-    if (!pnrCode.trim()) {
-      toast.error('Vui lòng nhập mã PNR');
+    const pnrs = parsePNRs(pnrCode);
+
+    if (pnrs.length === 0) {
+      toast.error('Vui lòng nhập ít nhất 1 PNR hợp lệ');
       return;
-    };
-    
+    }
+
     setIsLoading(true);
     setFiles([]);
-  
+
     try {
-      // API mới trả PNG
-      const listResponse = await fetch('https://apilive.hanvietair.com/list-pnr-v2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          pnr: pnrCode.trim(),
-          banner: banner,
-        }),
-      });
+      const listResponse = await fetch(
+        'https://apilive.hanvietair.com/list-pnr-v2',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pnr: pnrs.join(' '), // 🔥 nhiều PNR cách nhau bằng space
+            banner: banner,
+          }),
+        }
+      );
+
       const listResult = await listResponse.json();
-  
+
       if (!listResult.files || !Array.isArray(listResult.files)) {
-        toast.error('Không tìm thấy file cho mã PNR này');
-        setIsLoading(false);
+        toast.error('Không tìm thấy file nào');
         return;
       }
-  
-      toast.success(`Tìm thấy ${listResult.files.length} file PNG`);
-  
-      const pngFiles: PNRFile[] = [];
+
+      toast.success(
+        `Tìm thấy ${listResult.files.length} file từ ${pnrs.length} PNR`
+      );
+
+      const resultFiles: PNRFile[] = [];
+
       for (const fileUrl of listResult.files) {
         try {
           const fileResponse = await fetch(fileUrl);
+
           if (fileResponse.ok) {
-            const blob = await fileResponse.blob(); // đây đã là PNG
-            const fileName = fileUrl.split('/').pop() || 'document.png';
-            pngFiles.push({
+            const blob = await fileResponse.blob();
+
+            const fileName =
+              fileUrl.split('/').pop() || 'document.png';
+
+            resultFiles.push({
               url: fileUrl,
               name: fileName,
-              blob: blob
+              blob,
             });
           }
         } catch (error) {
-          console.error('Error fetching file:', fileUrl, error);
+          console.error('Error fetching:', fileUrl, error);
         }
       }
-  
-      setFiles(pngFiles);
-      if (pngFiles.length === 0) {
-        toast.error('Không thể tải xuống file PNG');
+
+      setFiles(resultFiles);
+
+      if (resultFiles.length === 0) {
+        toast.error('Không tải được file nào');
       }
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Có lỗi xảy ra khi kiểm tra PNR');
+      console.error(error);
+      toast.error('Có lỗi xảy ra khi kiểm tra');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ==================================
+  // Copy PNG
+  // ==================================
   const handleCopyFile = async (file: PNRFile) => {
     if (!file.blob) {
-      toast.error("Không có file để copy");
+      toast.error('Không có file để copy');
       return;
     }
-  
+
     try {
       await navigator.clipboard.write([
         new ClipboardItem({
-          "image/png": file.blob, // trực tiếp là PNG từ server
+          'image/png': file.blob,
         }),
       ]);
-      toast.success("✅ Đã copy ảnh PNG vào clipboard");
+
+      toast.success('Đã copy ảnh PNG');
     } catch (err) {
-      console.error("Copy failed", err);
-      toast.error("❌ Trình duyệt không hỗ trợ copy PNG");
+      console.error(err);
+      toast.error('Trình duyệt không hỗ trợ copy');
     }
   };
 
+  // ==================================
+  // Download
+  // ==================================
   const handleDownload = (file: PNRFile) => {
-    if (file.blob) {
-      const url = URL.createObjectURL(file.blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success('Đã tải xuống file');
-    }
+    if (!file.blob) return;
+
+    const url = URL.createObjectURL(file.blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+
+    toast.success('Đã tải xuống file');
   };
 
   return (
@@ -155,58 +202,78 @@ export const PNRCheckModal = ({ isOpen, onClose }: PNRCheckModalProps) => {
         <DialogHeader>
           <DialogTitle>Kiểm tra mã PNR</DialogTitle>
           <DialogDescription>
-            Nhập mã PNR để xem và tải xuống mặt vé PDF
+            Nhập nhiều PNR cách nhau bằng dấu cách / Enter
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
+          {/* INPUT */}
           <div className="flex space-x-2">
             <div className="flex-1">
               <Label htmlFor="pnr">Mã PNR</Label>
+
               <Input
                 id="pnr"
                 value={pnrCode}
-                onChange={(e) => setPnrCode(e.target.value.toUpperCase())}
-                placeholder="Nhập mã PNR (6 ký tự)"
-                maxLength={6}
+                onChange={(e) =>
+                  setPnrCode(e.target.value.toUpperCase())
+                }
+                placeholder="VD: ABC123 XYZ789 DEF456"
                 className="uppercase"
               />
             </div>
+
             <div className="flex items-end">
-              <Button 
-                onClick={handleCheck} 
+              <Button
+                onClick={handleCheck}
                 disabled={isLoading || !pnrCode.trim()}
                 className="whitespace-nowrap"
               >
-                {isLoading ? 'Đang kiểm tra...' : 'Kiểm tra'}
+                {isLoading
+                  ? 'Đang kiểm tra...'
+                  : 'Kiểm tra'}
               </Button>
             </div>
           </div>
 
+          {/* FILES */}
           {files.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Danh sách file PDF ({files.length})</h3>
+              <h3 className="text-lg font-semibold">
+                Danh sách file ({files.length})
+              </h3>
+
               <div className="grid gap-3">
                 {files.map((file, index) => (
-                  <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                  <div
+                    key={index}
+                    className="border rounded-lg p-4 bg-gray-50"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <FileText className="h-5 w-5 text-red-600" />
-                        <span className="font-medium text-sm">{file.name}</span>
+                        <span className="font-medium text-sm">
+                          {file.name}
+                        </span>
                       </div>
+
                       <div className="flex space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleCopyFile(file)}
+                          onClick={() =>
+                            handleCopyFile(file)
+                          }
                         >
                           <Copy className="h-4 w-4 mr-1" />
-                          Copy Ảnh
+                          Copy
                         </Button>
+
                         <Button
-                          variant="default"
                           size="sm"
-                          onClick={() => handleDownload(file)}
+                          onClick={() =>
+                            handleDownload(file)
+                          }
                           disabled={!file.blob}
                         >
                           <Download className="h-4 w-4 mr-1" />
@@ -214,13 +281,13 @@ export const PNRCheckModal = ({ isOpen, onClose }: PNRCheckModalProps) => {
                         </Button>
                       </div>
                     </div>
-                    
+
                     {file.blob && (
                       <div className="mt-3">
                         <img
                           src={URL.createObjectURL(file.blob)}
                           className="w-full h-[1000px] object-contain border rounded"
-                          alt={`Preview ${file.name}`}
+                          alt={file.name}
                         />
                       </div>
                     )}
@@ -230,8 +297,13 @@ export const PNRCheckModal = ({ isOpen, onClose }: PNRCheckModalProps) => {
             </div>
           )}
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
+          {/* FOOTER */}
+          <div className="flex justify-end pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+            >
               Đóng
             </Button>
           </div>
