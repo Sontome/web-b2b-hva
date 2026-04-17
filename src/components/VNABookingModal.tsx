@@ -134,7 +134,7 @@ export const VNABookingModal = ({
     const today = new Date();
     const ageInYears = differenceInYears(today, dob);
     const ageInDays = differenceInDays(today, dob);
-    const twoYearsInDays = 2 * 365;
+    const twoYearsInDays = 1 * 365;
     const twelveYearsInDays = 12 * 365;
     return ageInDays >= twoYearsInDays && ageInDays < twelveYearsInDays;
   };
@@ -469,7 +469,7 @@ export const VNABookingModal = ({
                       placeholder="VD: 30/10/2018"
                       className="mt-2"
                       minDate={twelveYearsAgo}
-                      maxDate={twoYearsAgo}
+                      maxDate={new Date(today.getFullYear() - 1, today.getMonth(), today.getDate())}
                     />
                     {passenger.Ngày_sinh && !validateChildAge(passenger.Ngày_sinh) && (
                       <p className="text-xs text-destructive mt-1">Trẻ em phải từ 2 đến 12 tuổi</p>
