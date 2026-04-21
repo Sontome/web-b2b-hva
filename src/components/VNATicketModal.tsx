@@ -331,7 +331,11 @@ export const VNATicketModal: React.FC<VNATicketModalProps> = ({ isOpen, onClose,
                           {/* Class */}
                           <div className="ml-0 flex flex-col items-center relative -translate-y-[8px]">
                             <div className="text-center font-medium text-[#535E71]">Class</div>
-                            <div className="text-center text-[#1B2132]">Phổ thông ({segment.loaive})</div>
+                            <div className="text-center text-[#1B2132]">
+                              {['J', 'C', 'D', 'I'].includes(segment.loaive)
+                                ? `Thương gia (${segment.loaive})`
+                                : `Phổ thông (${segment.loaive})`}
+                            </div>
                           </div>
 
                           {/* Status */}
