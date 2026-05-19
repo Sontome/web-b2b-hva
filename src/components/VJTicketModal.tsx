@@ -201,23 +201,39 @@ export const VJTicketModal: React.FC<VJTicketModalProps> = ({ isOpen, onClose, i
               </div>
 
               {/* Payment Warning */}
-              {!pnrData.paymentstatus && (
-                <div className="px-4 py-3 rounded" style={{ backgroundColor: "#fffad6" }}>
-                  <p className="text-lg text-black font-semibold">
-                    Vui lòng thanh toán trước <span className="text-red-600">{pnrData.hanthanhtoan}</span> sau thời hạn
-                    trên vé sẽ bị hủy.
-                  </p>
-                </div>
-              )}
-              {!pnrData.paymentstatus && (
-                <div className="px-4 py-3 rounded" style={{ backgroundColor: "#fffad6" }}>
-                  <p className="text-lg text-black font-semibold">
-                    Tổng tiền:{" "}
-                    <span className="text-red-600"> {Math.round(pnrData.tongbillgiagoc).toLocaleString("en-US")}</span>{" "}
-                    <span className="text-gray-800">{pnrData.currency}</span>
-                  </p>
-                </div>
-              )}
+              <div
+                className="px-4 py-3 rounded"
+                style={{
+                  backgroundColor: !pnrData.paymentstatus ? "#fffad6" : "#DCFCD9",
+                }}
+              >
+                <p className="text-lg text-black font-semibold">
+                  {!pnrData.paymentstatus ? (
+                    <>
+                      Vui lòng thanh toán trước{" "}
+                      <span className="text-red-600">{pnrData.hanthanhtoan}</span>{" "}
+                      sau thời hạn trên vé sẽ bị hủy.
+                    </>
+                  ) : (
+                    <span className="text-green-700">Đã thanh toán</span>
+                  )}
+                </p>
+              </div>
+              
+              <div
+                className="px-4 py-3 rounded"
+                style={{
+                  backgroundColor: !pnrData.paymentstatus ? "#fffad6" : "#DCFCD9",
+                }}
+              >
+                <p className="text-lg text-black font-semibold">
+                  Tổng tiền:{" "}
+                  <span className="text-red-600">
+                    {Math.round(pnrData.tongbillgiagoc).toLocaleString("en-US")}
+                  </span>{" "}
+                  <span className="text-gray-800">{pnrData.currency}</span>
+                </p>
+              </div>
               <div ref={captureRef}>
                 {/* Passenger Information */}
                 <div className="border rounded-lg overflow-hidden">
