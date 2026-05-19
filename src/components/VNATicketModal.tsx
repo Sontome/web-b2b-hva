@@ -208,15 +208,20 @@ export const VNATicketModal: React.FC<VNATicketModalProps> = ({ isOpen, onClose,
                 </div>
               )}
 
-              {!pnrData.paymentstatus && (
-                <div className="px-4 py-3 rounded" style={{ backgroundColor: "#fffad6" }}>
-                  <p className="text-lg text-black font-semibold">
-                    Tổng tiền:{" "}
-                    <span className="text-red-600"> {Math.round(pnrData.tongbillgiagoc).toLocaleString("en-US")}</span>{" "}
-                    <span className="text-gray-800">KRW</span>
-                  </p>
-                </div>
-              )}
+              <div
+                className="px-4 py-3 rounded"
+                style={{
+                  backgroundColor: !pnrData.paymentstatus ? "#fffad6" : "#DCFCD9",
+                }}
+              >
+                <p className="text-lg text-black font-semibold">
+                  Tổng tiền:{" "}
+                  <span className="text-red-600">
+                    {Math.round(pnrData.tongbillgiagoc).toLocaleString("en-US")}
+                  </span>{" "}
+                  <span className="text-gray-800">KRW</span>
+                </p>
+              </div>
 
               <div ref={captureRef} className="[&_p]:m-0 [&_span]:m-0 [&_div]:leading-tight [&_p]:leading-tight">
                 {/* Passenger Information */}
