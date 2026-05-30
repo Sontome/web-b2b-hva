@@ -62,6 +62,51 @@ export type Database = {
         }
         Relationships: []
       }
+      inbound_email: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          customer: string | null
+          file_name: string | null
+          file_path: string | null
+          hang: string | null
+          id: string
+          pnr: string | null
+          sender_email: string | null
+          sender_name: string | null
+          status: string | null
+          subject: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          customer?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          hang?: string | null
+          id?: string
+          pnr?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
+          status?: string | null
+          subject?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          customer?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          hang?: string | null
+          id?: string
+          pnr?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
+          status?: string | null
+          subject?: string | null
+        }
+        Relationships: []
+      }
       kakanoti: {
         Row: {
           id: string
@@ -89,6 +134,63 @@ export type Database = {
           row_sent?: boolean | null
           timecreat?: string
           type?: string | null
+        }
+        Relationships: []
+      }
+      mail_queue: {
+        Row: {
+          banner: string | null
+          created_at: string | null
+          customer_name: string | null
+          email: string
+          id: string
+          last_error: string | null
+          missing_pnrs: Json | null
+          next_retry_at: string | null
+          phone: string | null
+          pnrs: Json
+          retry_count: number | null
+          salutation: string | null
+          sent_at: string | null
+          status: string
+          type: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          banner?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          email: string
+          id?: string
+          last_error?: string | null
+          missing_pnrs?: Json | null
+          next_retry_at?: string | null
+          phone?: string | null
+          pnrs: Json
+          retry_count?: number | null
+          salutation?: string | null
+          sent_at?: string | null
+          status?: string
+          type?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          banner?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          email?: string
+          id?: string
+          last_error?: string | null
+          missing_pnrs?: Json | null
+          next_retry_at?: string | null
+          phone?: string | null
+          pnrs?: Json
+          retry_count?: number | null
+          salutation?: string | null
+          sent_at?: string | null
+          status?: string
+          type?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -191,6 +293,81 @@ export type Database = {
           id?: string
           pnr?: string | null
           timecreat?: string | null
+        }
+        Relationships: []
+      }
+      pnr_email_logs: {
+        Row: {
+          customer_name: string | null
+          day1: string | null
+          day2: string | null
+          day3: string | null
+          day4: string | null
+          email: string
+          first_sent_at: string | null
+          id: number
+          last_sent_at: string | null
+          mail_type: string
+          phone: string | null
+          pnr: string
+          salutation: string | null
+          send_count: number | null
+          time1: string | null
+          time2: string | null
+          time3: string | null
+          time4: string | null
+          trip1: string | null
+          trip2: string | null
+          trip3: string | null
+          trip4: string | null
+        }
+        Insert: {
+          customer_name?: string | null
+          day1?: string | null
+          day2?: string | null
+          day3?: string | null
+          day4?: string | null
+          email: string
+          first_sent_at?: string | null
+          id?: number
+          last_sent_at?: string | null
+          mail_type?: string
+          phone?: string | null
+          pnr: string
+          salutation?: string | null
+          send_count?: number | null
+          time1?: string | null
+          time2?: string | null
+          time3?: string | null
+          time4?: string | null
+          trip1?: string | null
+          trip2?: string | null
+          trip3?: string | null
+          trip4?: string | null
+        }
+        Update: {
+          customer_name?: string | null
+          day1?: string | null
+          day2?: string | null
+          day3?: string | null
+          day4?: string | null
+          email?: string
+          first_sent_at?: string | null
+          id?: number
+          last_sent_at?: string | null
+          mail_type?: string
+          phone?: string | null
+          pnr?: string
+          salutation?: string | null
+          send_count?: number | null
+          time1?: string | null
+          time2?: string | null
+          time3?: string | null
+          time4?: string | null
+          trip1?: string | null
+          trip2?: string | null
+          trip3?: string | null
+          trip4?: string | null
         }
         Relationships: []
       }
@@ -455,6 +632,72 @@ export type Database = {
           id?: string
           minutes?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ticket_log: {
+        Row: {
+          created_at: string | null
+          day1: string | null
+          day2: string | null
+          day3: string | null
+          day4: string | null
+          file_path: string | null
+          hang: string | null
+          id: number
+          name: string | null
+          paymentstatus: boolean | null
+          pnr: string | null
+          time1: string | null
+          time2: string | null
+          time3: string | null
+          time4: string | null
+          trip1: string | null
+          trip2: string | null
+          trip3: string | null
+          trip4: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day1?: string | null
+          day2?: string | null
+          day3?: string | null
+          day4?: string | null
+          file_path?: string | null
+          hang?: string | null
+          id?: never
+          name?: string | null
+          paymentstatus?: boolean | null
+          pnr?: string | null
+          time1?: string | null
+          time2?: string | null
+          time3?: string | null
+          time4?: string | null
+          trip1?: string | null
+          trip2?: string | null
+          trip3?: string | null
+          trip4?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day1?: string | null
+          day2?: string | null
+          day3?: string | null
+          day4?: string | null
+          file_path?: string | null
+          hang?: string | null
+          id?: never
+          name?: string | null
+          paymentstatus?: boolean | null
+          pnr?: string | null
+          time1?: string | null
+          time2?: string | null
+          time3?: string | null
+          time4?: string | null
+          trip1?: string | null
+          trip2?: string | null
+          trip3?: string | null
+          trip4?: string | null
         }
         Relationships: []
       }
