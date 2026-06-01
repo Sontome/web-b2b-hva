@@ -20,6 +20,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHol
   const { toast } = useToast();
   const { playClickSound } = useHoverSound();
   const [adjustedPrice, setAdjustedPrice] = useState(flight.price);
+  const [stuApplied, setStuApplied] = useState(false);
 
   useEffect(() => {
     // Apply airline-specific markup
@@ -91,11 +92,11 @@ export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHol
     if (flight.airline === 'VJ') {
       return 'Vietjet 7kg xách tay, 20kg ký gửi';
     } else {
-      // VNA baggage based on hành_lý_vna field
+      const prefix = stuApplied ? 'VNairlines DHS' : 'VNairlines';
       if (flight.baggageType === 'ADT') {
-        return 'VNairlines 10kg xách tay, 23kg ký gửi';
+        return `${prefix} 10kg xách tay, 23kg ký gửi`;
       } else {
-        return 'VNairlines 10kg xách tay, 46kg ký gửi';
+        return `${prefix} 10kg xách tay, 46kg ký gửi`;
       }
     }
   };
@@ -189,7 +190,10 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(adjustedPrice)}w`;
               flight={flight}
               currentPrice={adjustedPrice}
               passengerCount={1}
-              onApplyStuPrice={(p) => setAdjustedPrice(Math.round(p / 100) * 100)}
+              onApplyStuPrice={(p) => {
+                setAdjustedPrice(Math.round(p / 100) * 100);
+                setStuApplied(true);
+              }}
             />
           )}
           {onHoldTicket && (
