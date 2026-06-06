@@ -52,20 +52,30 @@ export const PriceSummary: React.FC<{
   };
 
   const saveEdit = () => {
-
     const parsed = Number(tempValue);
-
     if (!isNaN(parsed)) {
-
       if (editingField === 'penalty') {
+        const min = Number(price?.penalty_total) || 0;
+        if (parsed < min) {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          import('sonner').then(({ toast }) =>
+            toast.error(`Phí đổi mới không được nhỏ hơn ${min.toLocaleString()}`)
+          );
+          return;
+        }
         setPenalty(parsed);
       }
-
       if (editingField === 'grd') {
+        const min = Number(price?.GRD_TOTAL) || 0;
+        if (parsed < min) {
+          import('sonner').then(({ toast }) =>
+            toast.error(`Phí chênh lệch mới không được nhỏ hơn ${min.toLocaleString()}`)
+          );
+          return;
+        }
         setGrd(parsed);
       }
     }
-
     setEditingField(null);
   };
 
