@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plane, Clock, Users, Copy, ShoppingCart } from 'lucide-react';
 import { VNAFlightActions } from '@/components/VNAFlightActions';
+import { VJFlightActions } from '@/components/VJFlightActions';
 import { Flight } from '@/services/flightApi';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -196,6 +197,9 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(adjustedPrice)}w`;
               }}
             />
           )}
+          {flight.airline === 'VJ' && (
+            <VJFlightActions flight={flight} />
+          )}
           {onHoldTicket && (
             <Button
               onClick={() => onHoldTicket(flight)}
@@ -224,7 +228,7 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(adjustedPrice)}w`;
                 Còn {flight.availableSeats} ghế
               </div>
             </div>
-            <div className={`flex items-center space-x-2 ${flight.airline === 'VNA' ? (onHoldTicket ? 'mr-32' : 'mr-24') : 'mr-12'}`}>
+            <div className={`flex items-center space-x-2 ${flight.airline === 'VNA' ? (onHoldTicket ? 'mr-32' : 'mr-24') : (onHoldTicket ? 'mr-24' : 'mr-12')}`}>
               <Badge 
                 variant={flight.airline === 'VJ' ? 'default' : 'secondary'}
                 className={`transition-all duration-200 ${flight.airline === 'VJ' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
