@@ -38,6 +38,8 @@ export default function Index() {
   const navigate = useNavigate();
   const [flights, setFlights] = useState<Flight[]>([]);
   const [otherFlights, setOtherFlights] = useState<OtherFlight[]>([]);
+  const [rawOtherFlights, setRawOtherFlights] = useState<OtherAirlineFlight[]>([]);
+  const [lastSearchIsRoundTrip, setLastSearchIsRoundTrip] = useState(false);
   const [showOtherAirlinesModal, setShowOtherAirlinesModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -337,6 +339,8 @@ export default function Index() {
     setSearchPerformed(true);
     setFlights([]); // Clear previous results
     setOtherFlights([]); // Clear other airlines results
+    setRawOtherFlights([]);
+    setLastSearchIsRoundTrip(!!searchData.returnDate);
     setHasSearched(true);
     setSearchData(searchData);
     setLastSearchData(searchData);
@@ -388,28 +392,11 @@ export default function Index() {
             setTimeout(() => playNotificationSound(), 200);
           }
           
-          // Process Other Airlines flights if user has permission
-          if (profile?.perm_check_other && result.otherFlights.length > 0) {
-            const listOther = profile.list_other || [];
-            const isRoundTrip = !!searchData.returnDate;
-            const owMarkup = profile.price_ow_other || 0;
-            const rtMarkup = profile.price_rt_other || 0;
-            
-            // Filter and transform other flights
-            const processedOtherFlights: OtherFlight[] = result.otherFlights
-              .filter(f => listOther.includes(f.airline))
-              .map(f => {
-                const priceWithMarkup = f.price + (isRoundTrip ? rtMarkup : owMarkup);
-                const roundedPrice = Math.round(priceWithMarkup / 100) * 100;
-                
-                return {
-                  ...f,
-                  adjustedPrice: roundedPrice,
-                  baggageInfo: AIRLINE_BAGGAGE[f.airline] || { carryOn: '10kg' },
-                };
-              });
-            
-            setOtherFlights(processedOtherFlights);
+          // Always store raw other airlines flights; processing happens in useMemo
+          // so it correctly re-runs when profile loads/changes.
+          if (result.otherFlights.length > 0) {
+            console.log('[OtherAirlines] Raw flights from API:', result.otherFlights.length, result.otherFlights.map(f => f.airline));
+            setRawOtherFlights(result.otherFlights);
           }
         }).catch(error => {
           console.error('Vietnam Airlines API error:', error);
@@ -534,7 +521,32 @@ export default function Index() {
 
   // Get allowed airlines for other flights
   const allowedOtherAirlines = profile?.list_other || [];
-  
+
+  // Process raw other-airlines flights whenever profile or raw data changes.
+  // This avoids the stale-closure bug where profile wasn't loaded when API resolved.
+  useEffect(() => {
+    if (!profile?.perm_check_other || rawOtherFlights.length === 0) {
+      setOtherFlights([]);
+      return;
+    }
+    const listOther = profile.list_other || [];
+    const owMarkup = profile.price_ow_other || 0;
+    const rtMarkup = profile.price_rt_other || 0;
+    const processed: OtherFlight[] = rawOtherFlights
+      .filter(f => listOther.includes(f.airline))
+      .map(f => {
+        const priceWithMarkup = f.price + (lastSearchIsRoundTrip ? rtMarkup : owMarkup);
+        const roundedPrice = Math.round(priceWithMarkup / 100) * 100;
+        return {
+          ...f,
+          adjustedPrice: roundedPrice,
+          baggageInfo: AIRLINE_BAGGAGE[f.airline] || { carryOn: '10kg' },
+        };
+      });
+    console.log('[OtherAirlines] Processed flights:', processed.length, 'allowed:', listOther);
+    setOtherFlights(processed);
+  }, [rawOtherFlights, profile, lastSearchIsRoundTrip]);
+
   // Filter other flights by allowed airlines and find cheapest
   const filteredOtherFlights = otherFlights.filter(f => allowedOtherAirlines.includes(f.airline));
   const cheapestOtherFlight = filteredOtherFlights.length > 0 
