@@ -203,7 +203,7 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(adjustedPrice)}w`;
                 Còn {flight.availableSeats} ghế
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant={flight.airline === 'VJ' ? 'default' : 'secondary'}
                 className={
