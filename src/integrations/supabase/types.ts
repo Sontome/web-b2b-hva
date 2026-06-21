@@ -26,6 +26,24 @@ export type Database = {
         }
         Relationships: []
       }
+      domain_config: {
+        Row: {
+          config_json: Json
+          domain: string
+          updated_at: string | null
+        }
+        Insert: {
+          config_json: Json
+          domain: string
+          updated_at?: string | null
+        }
+        Update: {
+          config_json?: Json
+          domain?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       held_tickets: {
         Row: {
           created_at: string
