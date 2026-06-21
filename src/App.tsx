@@ -15,6 +15,7 @@ import HeldTickets from "./pages/HeldTickets";
 import PriceMonitor from "./pages/PriceMonitor";
 import KakaoNoti from "./pages/KakaoNoti";
 import PnrDelay from "./pages/PnrDelay";
+import DomainConfig from "./pages/DomainConfig";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,11 @@ const App = () => (
             <Route path="/admin/pnr-delay" element={
               <ProtectedRoute>
                 <PnrDelay />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/domain-config" element={
+              <ProtectedRoute>
+                <DomainConfig />
               </ProtectedRoute>
             } />
             <Route path="/cart" element={
