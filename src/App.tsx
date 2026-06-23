@@ -16,6 +16,7 @@ import PriceMonitor from "./pages/PriceMonitor";
 import KakaoNoti from "./pages/KakaoNoti";
 import PnrDelay from "./pages/PnrDelay";
 import DomainConfig from "./pages/DomainConfig";
+import InboundEmail from "./pages/InboundEmail";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,11 @@ const App = () => (
             <Route path="/admin/domain-config" element={
               <ProtectedRoute>
                 <DomainConfig />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/inbound-email" element={
+              <ProtectedRoute>
+                <InboundEmail />
               </ProtectedRoute>
             } />
             <Route path="/cart" element={
