@@ -89,6 +89,7 @@ export type Database = {
           file_path: string | null
           hang: string | null
           id: string
+          note: string | null
           pnr: string | null
           sender_email: string | null
           sender_name: string | null
@@ -103,6 +104,7 @@ export type Database = {
           file_path?: string | null
           hang?: string | null
           id?: string
+          note?: string | null
           pnr?: string | null
           sender_email?: string | null
           sender_name?: string | null
@@ -117,6 +119,7 @@ export type Database = {
           file_path?: string | null
           hang?: string | null
           id?: string
+          note?: string | null
           pnr?: string | null
           sender_email?: string | null
           sender_name?: string | null
