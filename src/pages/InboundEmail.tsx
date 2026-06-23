@@ -293,9 +293,20 @@ export default function InboundEmail() {
 
               <div>
                 <div className="text-sm text-muted-foreground mb-1">Nội dung</div>
-                <pre className="bg-muted rounded-md p-3 text-xs whitespace-pre-wrap max-h-72 overflow-y-auto">
-{selected.body || '(Không có nội dung)'}
-                </pre>
+                {!selected.body ? (
+                  <pre className="bg-muted rounded-md p-3 text-xs whitespace-pre-wrap max-h-72 overflow-y-auto">(Không có nội dung)</pre>
+                ) : selected.body.includes('<') ? (
+                  <iframe
+                    title="email-body"
+                    srcDoc={selected.body}
+                    sandbox="allow-same-origin"
+                    style={{ width: '100%', height: '400px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff' }}
+                  />
+                ) : (
+                  <pre className="bg-muted rounded-md p-3 text-xs whitespace-pre-wrap max-h-72 overflow-y-auto">
+{selected.body}
+                  </pre>
+                )}
               </div>
 
               {selected.status === 'NEW' ? (
