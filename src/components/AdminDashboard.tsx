@@ -41,6 +41,9 @@ interface Profile {
   perm_check_discount: boolean;
   perm_check_vna_issued: boolean;
   perm_reprice: boolean;
+  perm_check_sunpq?: boolean;
+  price_ow_sunpq?: number;
+  price_rt_sunpq?: number;
   hold_ticket_quantity: number;
   apikey_telegram: string | null;
   idchat_telegram: string | null;
@@ -85,6 +88,9 @@ export const AdminDashboard = () => {
     perm_check_discount: false,
     perm_check_vna_issued: false,
     perm_reprice: false,
+    perm_check_sunpq: false,
+    price_ow_sunpq: 0,
+    price_rt_sunpq: 0,
     hold_ticket_quantity: 0,
     apikey_telegram: '',
     idchat_telegram: '',
@@ -210,6 +216,9 @@ export const AdminDashboard = () => {
       perm_check_discount: profile.perm_check_discount || false,
       perm_check_vna_issued: profile.perm_check_vna_issued || false,
       perm_reprice: profile.perm_reprice || false,
+      perm_check_sunpq: profile.perm_check_sunpq || false,
+      price_ow_sunpq: profile.price_ow_sunpq || 0,
+      price_rt_sunpq: profile.price_rt_sunpq || 0,
       hold_ticket_quantity: profile.hold_ticket_quantity || 0,
       apikey_telegram: profile.apikey_telegram || '',
       idchat_telegram: profile.idchat_telegram || '',
@@ -259,6 +268,9 @@ export const AdminDashboard = () => {
           perm_check_discount: editForm.perm_check_discount,
           perm_check_vna_issued: editForm.perm_check_vna_issued,
           perm_reprice: editForm.perm_reprice,
+          perm_check_sunpq: editForm.perm_check_sunpq,
+          price_ow_sunpq: editForm.price_ow_sunpq,
+          price_rt_sunpq: editForm.price_rt_sunpq,
           hold_ticket_quantity: editForm.hold_ticket_quantity,
           perm_hold_ticket: permHoldTicket,
           apikey_telegram: editForm.apikey_telegram || null,
@@ -852,7 +864,45 @@ export const AdminDashboard = () => {
                                 />
                               </div>
 
-                              {/* Permissions Section */}
+                              {/* SunPQ Section */}
+                              <div className="col-span-2 pt-4 border-t">
+                                <h3 className="text-lg font-semibold text-orange-600 mb-3">SunPQ</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="price_ow_sunpq">Phí SunPQ 1 chiều (KRW)</Label>
+                                    <Input
+                                      id="price_ow_sunpq"
+                                      type="number"
+                                      value={editForm.price_ow_sunpq}
+                                      onChange={(e) => setEditForm(prev => ({ ...prev, price_ow_sunpq: parseFloat(e.target.value) || 0 }))}
+                                      placeholder="0"
+                                      min="0"
+                                      step="1000"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="price_rt_sunpq">Phí SunPQ khứ hồi (KRW)</Label>
+                                    <Input
+                                      id="price_rt_sunpq"
+                                      type="number"
+                                      value={editForm.price_rt_sunpq}
+                                      onChange={(e) => setEditForm(prev => ({ ...prev, price_rt_sunpq: parseFloat(e.target.value) || 0 }))}
+                                      placeholder="0"
+                                      min="0"
+                                      step="1000"
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between col-span-2">
+                                    <Label htmlFor="perm_check_sunpq">Cho phép check vé SunPQ</Label>
+                                    <Switch
+                                      id="perm_check_sunpq"
+                                      checked={!!editForm.perm_check_sunpq}
+                                      onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, perm_check_sunpq: checked }))}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
                               <div className="space-y-4 pt-4 border-t">
                                 <h3 className="text-lg font-semibold">Phân quyền tính năng</h3>
                                 
