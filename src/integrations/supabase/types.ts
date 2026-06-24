@@ -90,6 +90,7 @@ export type Database = {
           hang: string | null
           id: string
           note: string | null
+          noti: boolean | null
           pnr: string | null
           sender_email: string | null
           sender_name: string | null
@@ -105,6 +106,7 @@ export type Database = {
           hang?: string | null
           id?: string
           note?: string | null
+          noti?: boolean | null
           pnr?: string | null
           sender_email?: string | null
           sender_name?: string | null
@@ -120,6 +122,7 @@ export type Database = {
           hang?: string | null
           id?: string
           note?: string | null
+          noti?: boolean | null
           pnr?: string | null
           sender_email?: string | null
           sender_name?: string | null
@@ -408,6 +411,7 @@ export type Database = {
           list_other: string[] | null
           perm_check_discount: boolean | null
           perm_check_other: boolean | null
+          perm_check_sunpq: boolean | null
           perm_check_vj: boolean | null
           perm_check_vna: boolean | null
           perm_check_vna_issued: boolean | null
@@ -419,9 +423,11 @@ export type Database = {
           phone: string | null
           price_markup: number | null
           price_ow_other: number | null
+          price_ow_sunpq: number | null
           price_ow_vj: number | null
           price_ow_vna: number | null
           price_rt_other: number | null
+          price_rt_sunpq: number | null
           price_rt_vj: number | null
           price_rt_vna: number | null
           price_vj: number | null
@@ -446,6 +452,7 @@ export type Database = {
           list_other?: string[] | null
           perm_check_discount?: boolean | null
           perm_check_other?: boolean | null
+          perm_check_sunpq?: boolean | null
           perm_check_vj?: boolean | null
           perm_check_vna?: boolean | null
           perm_check_vna_issued?: boolean | null
@@ -457,9 +464,11 @@ export type Database = {
           phone?: string | null
           price_markup?: number | null
           price_ow_other?: number | null
+          price_ow_sunpq?: number | null
           price_ow_vj?: number | null
           price_ow_vna?: number | null
           price_rt_other?: number | null
+          price_rt_sunpq?: number | null
           price_rt_vj?: number | null
           price_rt_vna?: number | null
           price_vj?: number | null
@@ -484,6 +493,7 @@ export type Database = {
           list_other?: string[] | null
           perm_check_discount?: boolean | null
           perm_check_other?: boolean | null
+          perm_check_sunpq?: boolean | null
           perm_check_vj?: boolean | null
           perm_check_vna?: boolean | null
           perm_check_vna_issued?: boolean | null
@@ -495,9 +505,11 @@ export type Database = {
           phone?: string | null
           price_markup?: number | null
           price_ow_other?: number | null
+          price_ow_sunpq?: number | null
           price_ow_vj?: number | null
           price_ow_vna?: number | null
           price_rt_other?: number | null
+          price_rt_sunpq?: number | null
           price_rt_vj?: number | null
           price_rt_vna?: number | null
           price_vj?: number | null
