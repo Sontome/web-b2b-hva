@@ -23,6 +23,10 @@ import { toast } from '@/components/ui/use-toast';
 import { TopNavbar } from '@/components/TopNavbar';
 import { supabase } from '@/integrations/supabase/client';
 import { OtherAirlinesModal, OtherFlight, AIRLINE_NAMES, AIRLINE_BAGGAGE } from '@/components/OtherAirlinesModal';
+import SunPQModal from '@/components/SunPQModal';
+import SunPQTicketModal from '@/components/SunPQTicketModal';
+import { searchSunPQFlights } from '@/services/sunpqService';
+import type { SunPQTrip } from '@/types/sunpq';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +68,11 @@ export default function Index() {
   const [lowFareReturn, setLowFareReturn] = useState<LowFareDay[]>([]);
   const [isLoadingLowFare, setIsLoadingLowFare] = useState(false);
   const [lastSearchData, setLastSearchData] = useState<SearchFormData | null>(null);
+  const [sunpqOpen, setSunpqOpen] = useState(false);
+  const [sunpqFlights, setSunpqFlights] = useState<SunPQTrip[]>([]);
+  const [sunpqLoading, setSunpqLoading] = useState(false);
+  const [sunpqSearchPayload, setSunpqSearchPayload] = useState<any>(null);
+  const [showSunPQTicketModal, setShowSunPQTicketModal] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     airlines: ['VJ', 'VNA'],
     showCheapestOnly: false,
@@ -340,6 +349,7 @@ export default function Index() {
     setFlights([]); // Clear previous results
     setOtherFlights([]); // Clear other airlines results
     setRawOtherFlights([]);
+    setSunpqFlights([]);
     setLastSearchIsRoundTrip(!!searchData.returnDate);
     setHasSearched(true);
     setSearchData(searchData);
@@ -358,6 +368,43 @@ export default function Index() {
       show2pc: false,
       sortBy: 'price'
     });
+
+    // Fire SunPQ search in parallel (no permission gating on display, gated below by perm)
+    if (profile?.perm_check_sunpq) {
+      const tripType: 'OW' | 'RT' = searchData.tripType === 'round_trip' ? 'RT' : 'OW';
+      const fmt = (d?: Date | string) => {
+        if (!d) return '';
+        if (d instanceof Date) return d.toISOString().slice(0, 10);
+        return String(d).split('T')[0];
+      };
+      const payload = {
+        tripType,
+        departure: searchData.from,
+        arrival: searchData.to,
+        departureDate: fmt(searchData.departureDate),
+        returnDate: fmt(searchData.returnDate),
+        adults: searchData.passengers || 1,
+        children: 0,
+        infants: 0,
+        sunpqOneWayFee: profile?.price_ow_sunpq ?? 0,
+        sunpqRoundTripFee: profile?.price_rt_sunpq ?? 0,
+      };
+      setSunpqSearchPayload(payload);
+      setSunpqLoading(true);
+      searchSunPQFlights({
+        departure: payload.departure,
+        arrival: payload.arrival,
+        departureDate: payload.departureDate,
+        returnDate: payload.returnDate,
+        tripType,
+        adults: payload.adults,
+        children: 0,
+        infants: 0,
+      })
+        .then((res) => setSunpqFlights(res.body || []))
+        .catch((e) => console.error('SunPQ search error', e))
+        .finally(() => setSunpqLoading(false));
+    }
 
     try {
       const promises = [];
@@ -555,6 +602,21 @@ export default function Index() {
       )
     : null;
 
+  // Compute cheapest SunPQ trip (with markup)
+  const sunpqOneWayFee = profile?.price_ow_sunpq ?? 0;
+  const sunpqRoundTripFee = profile?.price_rt_sunpq ?? 0;
+  const sunpqTripType: 'OW' | 'RT' = lastSearchIsRoundTrip ? 'RT' : 'OW';
+  const sunpqFee = sunpqTripType === 'RT' ? sunpqRoundTripFee : sunpqOneWayFee;
+  const sunpqWithPrice = (sunpqFlights || []).map((t) => {
+    const base =
+      Number(t.thông_tin_chung?.giá_vé ?? t.thông_tin_chung?.giá_vé_gốc ?? 0) ||
+      (t.chiều_đi?.giá_vé_gốc || 0) + (t.chiều_về?.giá_vé_gốc || 0);
+    return { trip: t, finalPrice: Math.round((base + sunpqFee) / 100) * 100 };
+  });
+  const cheapestSunPQ = sunpqWithPrice.length > 0
+    ? sunpqWithPrice.reduce((p, c) => (p.finalPrice < c.finalPrice ? p : c))
+    : null;
+
   // Check if we have direct flights (both departure and return for round-trip)
   const hasDirectFlights = flights.some(f => {
     if (!f.return) {
@@ -594,6 +656,7 @@ export default function Index() {
             onShowEmailModal={() => setIsEmailModalOpen(true)}
             onShowVJTicketModal={() => setShowVJTicketModal(true)}
             onShowVNATicketModal={() => setShowVNATicketModal(true)}
+            onShowSunPQTicketModal={profile?.perm_check_sunpq ? () => setShowSunPQTicketModal(true) : undefined}
             onShowRepriceModal={() => setShowRepriceModal(true)}
           />
 
@@ -613,6 +676,7 @@ export default function Index() {
           <main className="container mx-auto px-4 py-8 animate-fade-in">
         
         {flights.length > 0 && <div className="animate-fade-in" ref={resultsRef}>
+
             <FlightFilters filters={filters} onFiltersChange={setFilters} hasDirectFlights={hasDirectFlights} hasVfr2pc={hasVfr2pc} />
           </div>}
 
@@ -643,35 +707,73 @@ export default function Index() {
           />
         )}
 
-        {/* Other Airlines Cheapest Flight Box */}
-        {profile?.perm_check_other && cheapestOtherFlight && filteredOtherFlights.length > 0 && (
-          <div 
-            className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700 rounded-xl p-4 mb-6 cursor-pointer hover:shadow-lg transition-all duration-300 animate-fade-in"
-            onClick={() => setShowOtherAirlinesModal(true)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-purple-100 dark:bg-purple-800 p-2 rounded-lg">
-                  <Plane className="w-6 h-6 text-purple-600 dark:text-purple-300" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300">
-                    Hãng khác rẻ nhất: {cheapestOtherFlight.airlineName}
-                  </h3>
-                  <p className="text-sm text-purple-600 dark:text-purple-400">
-                    Bấm để xem tất cả {filteredOtherFlights.length} chuyến bay từ các hãng khác
-                  </p>
+        {/* Other Airlines + SunPQ Cheapest Boxes */}
+        {((profile?.perm_check_other && cheapestOtherFlight && filteredOtherFlights.length > 0) ||
+          (profile?.perm_check_sunpq && (sunpqLoading || cheapestSunPQ))) && (
+          <div className="flex flex-wrap gap-4 mb-6">
+            {profile?.perm_check_other && cheapestOtherFlight && filteredOtherFlights.length > 0 && (
+              <div
+                className="flex-1 min-w-[280px] bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-700 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-300 animate-fade-in"
+                onClick={() => setShowOtherAirlinesModal(true)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-purple-100 dark:bg-purple-800 p-2 rounded-lg">
+                      <Plane className="w-6 h-6 text-purple-600 dark:text-purple-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300">
+                        Hãng khác rẻ nhất: {cheapestOtherFlight.airlineName}
+                      </h3>
+                      <p className="text-sm text-purple-600 dark:text-purple-400">
+                        Bấm để xem tất cả {filteredOtherFlights.length} chuyến bay từ các hãng khác
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                      {formatPriceDisplay(cheapestOtherFlight.adjustedPrice)} KRW
+                    </div>
+                    <div className="text-sm text-purple-500 dark:text-purple-400">
+                      {cheapestOtherFlight.departure.airport} → {cheapestOtherFlight.arrival.airport}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                  {formatPriceDisplay(cheapestOtherFlight.adjustedPrice)} KRW
-                </div>
-                <div className="text-sm text-purple-500 dark:text-purple-400">
-                  {cheapestOtherFlight.departure.airport} → {cheapestOtherFlight.arrival.airport}
+            )}
+
+            {profile?.perm_check_sunpq && (sunpqLoading || cheapestSunPQ) && (
+              <div
+                className={`flex-1 min-w-[280px] bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-xl p-4 transition-all duration-300 animate-fade-in ${cheapestSunPQ ? 'cursor-pointer hover:shadow-lg' : 'opacity-80'}`}
+                onClick={() => cheapestSunPQ && setSunpqOpen(true)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img src="/icon/sunpq-logo.png" alt="SunPQ" className="w-10 h-10 rounded object-contain bg-white p-1 border border-orange-200" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-orange-700">
+                        SunPQ {cheapestSunPQ ? 'rẻ nhất' : 'đang tìm...'}
+                      </h3>
+                      <p className="text-sm text-orange-600">
+                        {cheapestSunPQ
+                          ? `Bấm để xem tất cả ${sunpqWithPrice.length} chuyến bay SunPQ`
+                          : 'Đang tải kết quả từ Sun Phú Quốc...'}
+                      </p>
+                    </div>
+                  </div>
+                  {cheapestSunPQ && (
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-orange-700">
+                        {formatPriceDisplay(cheapestSunPQ.finalPrice)} KRW
+                      </div>
+                      <div className="text-sm text-orange-500">
+                        {cheapestSunPQ.trip.chiều_đi?.nơi_đi} → {cheapestSunPQ.trip.chiều_đi?.nơi_đến}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -831,6 +933,21 @@ export default function Index() {
             flights={otherFlights}
             allowedAirlines={allowedOtherAirlines}
           />
+
+          {/* SunPQ Modal */}
+          <SunPQModal
+            isOpen={sunpqOpen}
+            onClose={() => setSunpqOpen(false)}
+            flights={sunpqFlights}
+            searchData={sunpqSearchPayload}
+          />
+
+          {/* SunPQ PNR check from Tiện ích menu */}
+          <SunPQTicketModal
+            isOpen={showSunPQTicketModal}
+            onClose={() => setShowSunPQTicketModal(false)}
+          />
+
         </>
       )}
 
