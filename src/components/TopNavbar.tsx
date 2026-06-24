@@ -18,6 +18,7 @@ interface TopNavbarProps {
   onShowEmailModal?: () => void;
   onShowVJTicketModal?: () => void;
   onShowVNATicketModal?: () => void;
+  onShowSunPQTicketModal?: () => void;
   onShowRepriceModal?: () => void;
 }
 
@@ -26,6 +27,7 @@ export const TopNavbar = ({
   onShowEmailModal,
   onShowVJTicketModal,
   onShowVNATicketModal,
+  onShowSunPQTicketModal,
   onShowRepriceModal,
 }: TopNavbarProps) => {
   const navigate = useNavigate();
@@ -37,7 +39,7 @@ export const TopNavbar = ({
         <div className="flex justify-between items-center">
           <div className="transition-all duration-200 cursor-pointer" onClick={() => navigate('/')}>
             <h1 className="text-2xl font-bold text-white">
-              Hàn Việt Air
+              Thu Hồng Tour
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -107,6 +109,11 @@ export const TopNavbar = ({
                         <DropdownMenuItem onClick={onShowVNATicketModal}>
                           Vietnam Airlines
                         </DropdownMenuItem>
+                        {onShowSunPQTicketModal && (
+                          <DropdownMenuItem onClick={onShowSunPQTicketModal}>
+                            SunPQ
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
                   )}
