@@ -880,6 +880,23 @@ export default function Index() {
               tripType={selectedFlight.return ? 'RT' : 'OW'}
               departureAirport={selectedFlight.departure.airport}
               maxSeats={selectedFlight.availableSeats}
+              segments={(() => {
+                const segs = [{
+                  departure_airport: selectedFlight.departure.airport,
+                  arrival_airport: selectedFlight.arrival.airport,
+                  departure_date: selectedFlight.departure.date,
+                  departure_time: selectedFlight.departure.time,
+                }];
+                if (selectedFlight.return) {
+                  segs.push({
+                    departure_airport: selectedFlight.return.departure.airport,
+                    arrival_airport: selectedFlight.return.arrival.airport,
+                    departure_date: selectedFlight.return.departure.date,
+                    departure_time: selectedFlight.return.departure.time,
+                  });
+                }
+                return segs;
+              })()}
               onBookingSuccess={(pnr) => {
                 console.log('Booking success:', pnr);
                 toast({
