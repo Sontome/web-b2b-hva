@@ -21,6 +21,13 @@ export interface PassengerWithType extends PassengerInfo {
   infant?: PassengerInfo;
 }
 
+export interface VJFlightSegmentInfo {
+  departure_airport: string;
+  arrival_airport: string;
+  departure_date: string; // YYYY-MM-DD or DD/MM/YYYY
+  departure_time: string; // HH:MM
+}
+
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,6 +40,8 @@ interface BookingModalProps {
   initialPassengers?: PassengerWithType[]; // Dữ liệu hành khách ban đầu
   onBookingSuccess?: (pnr: string) => void;
   onSavePassengers?: (passengers: PassengerWithType[]) => void; // Callback khi lưu thông tin
+  /** Outbound + (optional) return segment info, used to persist held_ticket_segments. */
+  segments?: VJFlightSegmentInfo[];
 }
 
 export const BookingModal = ({
@@ -47,6 +56,7 @@ export const BookingModal = ({
   initialPassengers,
   onBookingSuccess,
   onSavePassengers,
+  segments,
 }: BookingModalProps) => {
   const [passengers, setPassengers] = useState<PassengerWithType[]>(
     initialPassengers || [
@@ -449,28 +459,36 @@ export const BookingModal = ({
         } = await supabase.auth.getUser();
         if (user) {
           const expireDate = parseExpireDate(data.hạn_thanh_toán);
-          const { error: insertError } = await supabase.from("held_tickets").insert([
-            {
-              user_id: user.id,
-              pnr: data.mã_giữ_vé,
-              flight_details: JSON.parse(
-                JSON.stringify({
-                  bookingKey,
-                  bookingKeyReturn,
-                  tripType,
-                  departureAirport,
-                  passengers: formattedPassengers,
-                  deadline: data.hạn_thanh_toán,
-                }),
-              ),
-              expire_date: expireDate,
-              status: "holding",
-            },
-          ]);
-
-          if (insertError) {
-            console.error("Error saving held ticket:", insertError);
-          }
+          const { saveHeldTicket } = await import("@/utils/heldTickets");
+          const builtSegments = (segments && segments.length > 0
+            ? segments
+            : [
+                {
+                  departure_airport: departureAirport,
+                  arrival_airport: "",
+                  departure_date: new Date().toISOString().slice(0, 10),
+                  departure_time: "00:00",
+                },
+              ]
+          ).map((s, idx) => ({
+            segment_order: idx + 1,
+            departure_airport: s.departure_airport,
+            arrival_airport: s.arrival_airport,
+            departure_date: s.departure_date,
+            departure_time: s.departure_time,
+            trip: `${s.departure_airport}-${s.arrival_airport}`,
+          }));
+          const namelist = formattedPassengers.map((p: any) =>
+            `${p.Họ ?? ""} ${p.Tên ?? ""}`.trim()
+          );
+          await saveHeldTicket({
+            user_id: user.id,
+            pnr: data.mã_giữ_vé,
+            airline: "VJ",
+            namelist,
+            segments: builtSegments,
+            expire_date: expireDate,
+          });
         }
 
         // Call callback and auto-open ticket modal
