@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import type { SunPQTrip, SunPQPassenger, SunPQPaxType } from '@/types/sunpq';
 import { bookingSunPQ } from '@/services/sunpqService';
 import SunPQTicketModal from './SunPQTicketModal';
+import { supabase } from '@/integrations/supabase/client';
+import { saveHeldTicket } from '@/utils/heldTickets';
 
 interface Props {
   isOpen: boolean;
@@ -150,6 +152,28 @@ const SunPQBookingForm: React.FC<BookingFormProps> = ({ trip, searchData, onClos
 
       if (result?.pnr) {
         toast.success(`Giữ vé thành công: ${result.pnr}`);
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const segments = [trip.chiều_đi, trip.chiều_về].filter(Boolean).map((leg, idx) => ({
+              segment_order: idx + 1,
+              departure_airport: leg!.nơi_đi,
+              arrival_airport: leg!.nơi_đến,
+              departure_date: leg!.ngày_cất_cánh,
+              departure_time: leg!.giờ_cất_cánh || '00:00',
+            }));
+            const namelist = normalizedPax.map((p) => `${p.last_name} ${p.first_name}`.trim());
+            await saveHeldTicket({
+              user_id: user.id,
+              pnr: result.pnr,
+              airline: 'SUN',
+              namelist,
+              segments,
+            });
+          }
+        } catch (e) {
+          console.error('SunPQ saveHeldTicket failed', e);
+        }
         onSuccess(result.pnr);
       } else {
         throw new Error(result?.message || 'Giữ vé thất bại');
