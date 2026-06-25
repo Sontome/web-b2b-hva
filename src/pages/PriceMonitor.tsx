@@ -22,6 +22,7 @@ import { EmailTicketModal } from "@/components/EmailTicketModal";
 import { VJTicketModal } from "@/components/VJTicketModal";
 import { VNATicketModal } from "@/components/VNATicketModal";
 import { useHoverSound } from "@/hooks/useHoverSound";
+import { saveHeldTicket, buildPassengerName } from "@/utils/heldTickets";
 
 interface FlightSegment {
   departure_airport: string;
@@ -1058,25 +1059,31 @@ export default function PriceMonitor() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Không tìm thấy thông tin người dùng");
 
-    const { error: insertError } = await supabase.from("held_tickets").insert({
-      pnr: data.pnr,
+    const segs = [
+      {
+        segment_order: 1,
+        departure_airport: segment1.departure_airport,
+        arrival_airport: segment1.arrival_airport,
+        departure_date: segment1.departure_date,
+        departure_time: segment1.departure_time || '00:00',
+      },
+    ];
+    if (segment2) {
+      segs.push({
+        segment_order: 2,
+        departure_airport: segment2.departure_airport,
+        arrival_airport: segment2.arrival_airport,
+        departure_date: segment2.departure_date,
+        departure_time: segment2.departure_time || '00:00',
+      });
+    }
+    await saveHeldTicket({
       user_id: user.id,
-      flight_details: {
-        airline: 'VNA',
-        tripType: segment2 ? 'RT' : 'OW',
-        departureAirport: segment1.departure_airport,
-        arrivalAirport: segment1.arrival_airport,
-        departureDate: segment1.departure_date,
-        departureTime: segment1.departure_time,
-        arrivalDate: segment2?.departure_date,
-        arrivalTime: segment2?.departure_time,
-        passengers: flight.passengers,
-        doiTuong: segment1.ticket_class
-      } as any,
-      status: 'holding'
+      pnr: data.pnr,
+      airline: 'VNA',
+      namelist: flight.passengers.map(buildPassengerName),
+      segments: segs,
     });
-
-    if (insertError) throw insertError;
 
     // Send Telegram notification
     if (profile?.apikey_telegram && profile?.idchat_telegram) {
@@ -1456,25 +1463,34 @@ export default function PriceMonitor() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Không tìm thấy thông tin người dùng");
 
-    const { error: insertError } = await supabase.from("held_tickets").insert({
-      pnr: data.pnr,
-      user_id: user.id,
-      flight_details: {
+    {
+      const segs = [
+        {
+          segment_order: 1,
+          departure_airport: segment1.departure_airport,
+          arrival_airport: segment1.arrival_airport,
+          departure_date: segment1.departure_date,
+          departure_time: depTime ? `${depTime.slice(0, 2)}:${depTime.slice(2, 4)}` : '00:00',
+        },
+      ];
+      if (segment2) {
+        const retTimeRaw = matchingFlightData["chiều_về"]?.giờ_cất_cánh || '';
+        segs.push({
+          segment_order: 2,
+          departure_airport: segment2.departure_airport,
+          arrival_airport: segment2.arrival_airport,
+          departure_date: segment2.departure_date,
+          departure_time: retTimeRaw || '00:00',
+        });
+      }
+      await saveHeldTicket({
+        user_id: user.id,
+        pnr: data.pnr,
         airline: 'VNA',
-        tripType: segment2 ? 'RT' : 'OW',
-        departureAirport: segment1.departure_airport,
-        arrivalAirport: segment1.arrival_airport,
-        departureDate: segment1.departure_date,
-        departureTime: depTime,
-        arrivalDate: segment2?.departure_date,
-        arrivalTime: segment2 ? matchingFlightData["chiều_về"]?.giờ_cất_cánh : undefined,
-        passengers: flight.passengers,
-        doiTuong: segment1.ticket_class
-      } as any,
-      status: 'holding'
-    });
-
-    if (insertError) throw insertError;
+        namelist: flight.passengers.map(buildPassengerName),
+        segments: segs,
+      });
+    }
 
     // Delete monitored flight
     const { error: deleteError } = await supabase.from("monitored_flights").delete().eq("id", flight.id);
@@ -1659,22 +1675,34 @@ export default function PriceMonitor() {
       }
     }
 
-    const { error: insertError } = await supabase.from("held_tickets").insert({
-      pnr: data.mã_giữ_vé,
-      user_id: user.id,
-      flight_details: {
-        airline: flight.airline,
-        departure_airport: flight.departure_airport,
-        arrival_airport: flight.arrival_airport,
-        departure_date: flight.departure_date,
-        return_date: flight.return_date,
-        price: flight.current_price,
-        passengers: flight.passengers,
-      } as any,
-      expire_date: expireDate,
-    });
-
-    if (insertError) throw insertError;
+    {
+      const segs = [
+        {
+          segment_order: 1,
+          departure_airport: flight.departure_airport,
+          arrival_airport: flight.arrival_airport,
+          departure_date: flight.departure_date,
+          departure_time: flight.departure_time || '00:00',
+        },
+      ];
+      if (flight.return_date) {
+        segs.push({
+          segment_order: 2,
+          departure_airport: flight.arrival_airport,
+          arrival_airport: flight.departure_airport,
+          departure_date: flight.return_date,
+          departure_time: (flight as any).return_time || '00:00',
+        });
+      }
+      await saveHeldTicket({
+        user_id: user.id,
+        pnr: data.mã_giữ_vé,
+        airline: (flight.airline === 'VJ' || flight.airline === 'VNA' || flight.airline === 'SUN') ? flight.airline : 'OTHER',
+        namelist: (flight.passengers || []).map(buildPassengerName),
+        segments: segs,
+        expire_date: expireDate,
+      });
+    }
 
     // Check if original PNR exists in held tickets and delete it
     if (flight.pnr) {
