@@ -77,6 +77,7 @@ export default function HeldTickets() {
   const [holdTo, setHoldTo] = useState<string>(todayIso);
   const [filterAirline, setFilterAirline] = useState<string>("ALL");
   const [filterRoute, setFilterRoute] = useState<string>("ALL");
+  const [filterStatus, setFilterStatus] = useState<string>("ALL");
 
   useEffect(() => {
     if (!profile?.perm_hold_ticket) {
@@ -624,8 +625,19 @@ export default function HeldTickets() {
               return true;
             };
 
+            const getStatusKey = (t: HeldTicket) => {
+              const expired = isExpired(t.expire_date);
+              const isVJExpired = t.airline !== "VNA" && t.airline === "VJ" && expired;
+              if (t.ticket_status === "holding") return "holding";
+              if (t.ticket_status === "issued" || t.ticket_status === "ticketed") return "issued";
+              if (t.ticket_status === "paid") return "paid";
+              if (t.ticket_status === "expired" || isVJExpired) return "expired";
+              return t.ticket_status || "other";
+            };
+
             const filtered = tickets.filter((t) => {
               if (filterAirline !== "ALL" && t.airline !== filterAirline) return false;
+              if (filterStatus !== "ALL" && getStatusKey(t) !== filterStatus) return false;
               if (filterRoute !== "ALL") {
                 const hit = t.segments.some(
                   (s) => `${s.departure_airport}-${s.arrival_airport}` === filterRoute
@@ -703,6 +715,19 @@ export default function HeldTickets() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div>
+                      <Label className="text-xs">Trạng Thái</Label>
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ALL">Tất cả</SelectItem>
+                          <SelectItem value="holding">Đang giữ</SelectItem>
+                          <SelectItem value="issued">Đã xuất vé</SelectItem>
+                          <SelectItem value="paid">Đã thanh toán</SelectItem>
+                          <SelectItem value="expired">Hết hạn</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="md:col-span-2 lg:col-span-6 flex justify-end">
                       <Button
                         variant="outline"
@@ -714,6 +739,7 @@ export default function HeldTickets() {
                           setHoldTo(todayIso);
                           setFilterAirline("ALL");
                           setFilterRoute("ALL");
+                          setFilterStatus("ALL");
                         }}
                       >
                         Đặt lại bộ lọc
