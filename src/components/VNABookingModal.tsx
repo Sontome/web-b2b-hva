@@ -317,33 +317,35 @@ export const VNABookingModal = ({
         // Save to database
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          await supabase.from('held_tickets').insert([{
+          const { saveHeldTicket } = await import('@/utils/heldTickets');
+          const namelist = passengers.map(p => `${p.Họ ?? ''} ${p.Tên ?? ''}`.trim());
+          const segs = [
+            {
+              segment_order: 1,
+              departure_airport: flightInfo.dep,
+              arrival_airport: flightInfo.arr,
+              departure_date: flightInfo.depdate,
+              departure_time: flightInfo.deptime,
+              trip: `${flightInfo.dep}-${flightInfo.arr}`,
+            },
+          ];
+          if (flightInfo.tripType === 'RT' && flightInfo.arrdate && flightInfo.arrtime) {
+            segs.push({
+              segment_order: 2,
+              departure_airport: flightInfo.arr,
+              arrival_airport: flightInfo.dep,
+              departure_date: flightInfo.arrdate,
+              departure_time: flightInfo.arrtime,
+              trip: `${flightInfo.arr}-${flightInfo.dep}`,
+            });
+          }
+          await saveHeldTicket({
             user_id: user.id,
             pnr: data.pnr,
-            flight_details: JSON.parse(JSON.stringify({
-              airline: 'VNA',
-              tripType: flightInfo.tripType,
-              departureAirport: flightInfo.dep,
-              arrivalAirport: flightInfo.arr,
-              departureDate: flightInfo.depdate,
-              departureTime: flightInfo.deptime,
-              arrivalDate: flightInfo.arrdate,
-              arrivalTime: flightInfo.arrtime,
-              passengers: passengers.map(p => ({
-                lastName: p.Họ,
-                firstName: p.Tên,
-                gender: p.Giới_tính,
-                type: p.type,
-                infant: p.infant ? {
-                  lastName: p.infant.Họ,
-                  firstName: p.infant.Tên,
-                  gender: p.infant.Giới_tính
-                } : null
-              })),
-              doiTuong: doiTuong
-            })),
-            status: 'holding'
-          }]);
+            airline: 'VNA',
+            namelist,
+            segments: segs,
+          });
         }
 
         setSuccessData({ pnr: data.pnr });
