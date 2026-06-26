@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Copy, User } from "lucide-react";
 import html2canvas from "html2canvas";
 import { Camera } from "lucide-react";
+import { syncHeldTicketFromCheck } from "@/utils/syncHeldTicketFromCheck";
 
 interface VJTicketModalProps {
   isOpen: boolean;
@@ -124,6 +125,7 @@ export const VJTicketModal: React.FC<VJTicketModalProps> = ({ isOpen, onClose, i
 
       if (data.status === "OK") {
         setPnrData(data);
+        syncHeldTicketFromCheck(checkPnr.trim(), data);
         toast.success("Lấy thông tin PNR thành công");
       } else {
         toast.error("PNR không hợp lệ");
