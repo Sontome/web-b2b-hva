@@ -21,6 +21,7 @@ import { PNRCheckModal } from "@/components/PNRCheckModal";
 import { EmailTicketModal } from "@/components/EmailTicketModal";
 import { VJTicketModal } from "@/components/VJTicketModal";
 import { VNATicketModal } from "@/components/VNATicketModal";
+import SunPQTicketModal from "@/components/SunPQTicketModal";
 import { useHoverSound } from "@/hooks/useHoverSound";
 import { saveHeldTicket, buildPassengerName } from "@/utils/heldTickets";
 
@@ -117,6 +118,7 @@ export default function PriceMonitor() {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [showVJTicketModal, setShowVJTicketModal] = useState(false);
   const [showVNATicketModal, setShowVNATicketModal] = useState(false);
+  const [showSunPQTicketModal, setShowSunPQTicketModal] = useState(false);
 
   // Send Telegram notification
   const sendTelegramNotification = async (flight: MonitoredFlight, newPrice: number, oldPrice: number) => {
@@ -2244,6 +2246,7 @@ export default function PriceMonitor() {
         onShowEmailModal={() => setIsEmailModalOpen(true)}
         onShowVJTicketModal={() => setShowVJTicketModal(true)}
         onShowVNATicketModal={() => setShowVNATicketModal(true)}
+        onShowSunPQTicketModal={profile?.perm_check_sunpq ? () => setShowSunPQTicketModal(true) : undefined}
       />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
@@ -2864,6 +2867,11 @@ export default function PriceMonitor() {
         isOpen={showVNATicketModal}
         onClose={() => setShowVNATicketModal(false)}
         initialPNR=""
+      />
+
+      <SunPQTicketModal
+        isOpen={showSunPQTicketModal}
+        onClose={() => setShowSunPQTicketModal(false)}
       />
     </div>
   );
