@@ -40,6 +40,7 @@ interface HeldTicket {
   ticket_status: string;
   hold_date: string;
   expire_date: string | null;
+  tongbillgiagoc: number | null;
   segments: HeldSegment[];
 }
 
@@ -141,6 +142,7 @@ export default function HeldTickets() {
         ticket_status: row.ticket_status,
         hold_date: row.hold_date,
         expire_date: row.expire_date,
+        tongbillgiagoc: row.tongbillgiagoc ?? null,
         segments: (row.held_ticket_segments || [])
           .slice()
           .sort((a: HeldSegment, b: HeldSegment) => a.segment_order - b.segment_order),
@@ -149,7 +151,6 @@ export default function HeldTickets() {
       // Separate expired holding tickets and others
       const expiredHoldingTickets: HeldTicket[] = [];
       const filteredTickets = mapped.filter((ticket) => {
-        if (ticket.ticket_status === "cancelled") return false;
         if (ticket.ticket_status === "holding" && ticket.expire_date) {
           const expired = isExpired(ticket.expire_date);
           if (expired) {
@@ -589,6 +590,7 @@ export default function HeldTickets() {
         onShowEmailModal={() => setIsEmailModalOpen(true)}
         onShowVJTicketModal={() => setShowVJTicketModal(true)}
         onShowVNATicketModal={() => setShowVNATicketModal(true)}
+        onShowSunPQTicketModal={profile?.perm_check_sunpq ? () => { setTicketPnr(""); setIsSunTicketModalOpen(true); } : undefined}
       />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
@@ -631,7 +633,7 @@ export default function HeldTickets() {
               if (t.ticket_status === "holding") return "holding";
               if (t.ticket_status === "issued" || t.ticket_status === "ticketed") return "issued";
               if (t.ticket_status === "paid") return "paid";
-              if (t.ticket_status === "expired" || isVJExpired) return "expired";
+              if (t.ticket_status === "expired" || t.ticket_status === "cancelled" || isVJExpired) return "expired";
               return t.ticket_status || "other";
             };
 
@@ -772,6 +774,7 @@ export default function HeldTickets() {
                       <TableHead>Ngày đặt chỗ</TableHead>
                       <TableHead className="text-center">Khách</TableHead>
                       <TableHead>Hành khách</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Tổng bill giá gốc</TableHead>
                       <TableHead>TL (Hạn thanh toán)</TableHead>
                       <TableHead>Hãng</TableHead>
                       <TableHead className="text-right">Hành động</TableHead>
@@ -789,7 +792,7 @@ export default function HeldTickets() {
                           ? "Đã xuất vé"
                           : ticket.ticket_status === "paid"
                           ? "Đã thanh toán"
-                          : ticket.ticket_status === "expired" || isVJExpired
+                          : ticket.ticket_status === "expired" || ticket.ticket_status === "cancelled" || isVJExpired
                           ? "Hết hạn"
                           : ticket.ticket_status;
                       const rowTone = vnaTicket
@@ -845,6 +848,11 @@ export default function HeldTickets() {
                           <TableCell className="text-center">{ticket.number_person}</TableCell>
                           <TableCell className="text-xs">
                             {ticket.namelist.join(", ") || "—"}
+                          </TableCell>
+                          <TableCell className="text-right text-xs whitespace-nowrap font-medium">
+                            {ticket.tongbillgiagoc && ticket.tongbillgiagoc > 0
+                              ? ticket.tongbillgiagoc.toLocaleString("en-US")
+                              : "—"}
                           </TableCell>
                           <TableCell className="text-xs whitespace-nowrap">
                             {ticket.expire_date ? formatDate(ticket.expire_date) : "—"}
