@@ -100,6 +100,7 @@ export type Database = {
           payment_status: boolean
           pnr: string
           ticket_status: string
+          tongbillgiagoc: number | null
           updated_at: string
           user_id: string
         }
@@ -114,6 +115,7 @@ export type Database = {
           payment_status?: boolean
           pnr: string
           ticket_status?: string
+          tongbillgiagoc?: number | null
           updated_at?: string
           user_id: string
         }
@@ -128,6 +130,7 @@ export type Database = {
           payment_status?: boolean
           pnr?: string
           ticket_status?: string
+          tongbillgiagoc?: number | null
           updated_at?: string
           user_id?: string
         }
