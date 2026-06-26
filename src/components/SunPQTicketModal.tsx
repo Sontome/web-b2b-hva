@@ -6,6 +6,7 @@ import { Loader2, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { toPng } from 'html-to-image';
 import { checkSunPQPnr } from '@/services/sunpqService';
+import { syncHeldTicketFromCheck } from '@/utils/syncHeldTicketFromCheck';
 
 interface Props {
   isOpen: boolean;
@@ -125,6 +126,7 @@ const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR }) => {
       const res = await checkSunPQPnr(code);
       const body = res?.data ?? res?.body ?? res;
       setData(body);
+      syncHeldTicketFromCheck(code, body);
     } catch (e: any) {
       setErrorMsg(e?.message || 'Không tra cứu được PNR');
     } finally {
