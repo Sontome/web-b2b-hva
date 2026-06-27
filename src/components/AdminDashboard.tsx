@@ -514,6 +514,24 @@ export const AdminDashboard = () => {
             </CardContent>
           </Card>
 
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate('/admin/cart')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Giỏ Hàng</CardTitle>
+              <Ticket className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Quản lý</div>
+              <p className="text-xs text-muted-foreground">
+                Xem giỏ hàng của tất cả người dùng
+              </p>
+            </CardContent>
+          </Card>
+
+
+
 
 
           <Card>
