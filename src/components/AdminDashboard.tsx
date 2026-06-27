@@ -123,7 +123,7 @@ export const AdminDashboard = () => {
     setRateLimitLoading(true);
     try {
       // Call external API
-      await fetch('https://thuhongtour.com/admin/set-rate-limit', {
+      await fetch('https://apilive.hanvietair.com/admin/set-rate-limit', {
         method: 'POST',
         headers: { 'accept': 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ minutes }),
