@@ -17,6 +17,7 @@ import KakaoNoti from "./pages/KakaoNoti";
 import PnrDelay from "./pages/PnrDelay";
 import DomainConfig from "./pages/DomainConfig";
 import InboundEmail from "./pages/InboundEmail";
+import AdminCart from "./pages/AdminCart";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,11 @@ const App = () => (
             <Route path="/admin/inbound-email" element={
               <ProtectedRoute>
                 <InboundEmail />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/cart" element={
+              <ProtectedRoute>
+                <AdminCart />
               </ProtectedRoute>
             } />
             <Route path="/cart" element={
