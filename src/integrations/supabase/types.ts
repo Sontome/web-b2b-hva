@@ -816,6 +816,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_expired_holding_tickets: { Args: never; Returns: undefined }
       clear_sent_phone: { Args: never; Returns: number }
       delete_old_reprice: { Args: never; Returns: undefined }
       get_phone_email_to_pnr: {
