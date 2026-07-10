@@ -374,7 +374,12 @@ export default function Index() {
       const tripType: 'OW' | 'RT' = searchData.tripType === 'round_trip' ? 'RT' : 'OW';
       const fmt = (d?: Date | string) => {
         if (!d) return '';
-        if (d instanceof Date) return d.toISOString().slice(0, 10);
+        if (d instanceof Date) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}-${m}-${day}`;
+        }
         return String(d).split('T')[0];
       };
       const payload = {
