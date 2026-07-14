@@ -9,6 +9,9 @@ import { Flight } from '@/services/flightApi';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useHoverSound } from '@/hooks/useHoverSound';
+import { useTicketRulesDataset } from '@/hooks/useTicketRulesDataset';
+import { applyTicketRules, formatNotesLine } from '@/utils/ticketRuleEngine';
+import type { RuleSegmentInput, RuleTicketInput } from '@/types/ticketRules';
 
 interface FlightCardProps {
   flight: Flight;
@@ -57,6 +60,73 @@ export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHol
     const roundedPrice = Math.round(priceWithMarkup / 100) * 100;
     setAdjustedPrice(roundedPrice);
   }, [flight.price, flight.airline, profile?.price_vj, profile?.price_vna, profile?.price_ow_vj, profile?.price_rt_vj, profile?.price_ow_vna, profile?.price_rt_vna, flight.return]);
+
+  // ----- Ticket Rule Engine -----
+  const { data: rulesDataset } = useTicketRulesDataset();
+  const ruleEffects = React.useMemo(() => {
+    const segments: RuleSegmentInput[] = [];
+    const outLegSize = 1 + ((flight.departure.stops && flight.stopInfo?.stop1) ? 1 : 0);
+    segments.push({
+      airline: flight.airline,
+      from: flight.departure.airport,
+      to: flight.stopInfo?.stop1 || flight.arrival.airport,
+      departure_time: flight.departure.time,
+      arrival_time: outLegSize === 1 ? flight.arrival.time : undefined,
+      departure_date: flight.departure.date,
+      segment_order: 1,
+      leg_index: flight.return ? 0 : null,
+      leg_size: outLegSize,
+      booking_class: flight.ticketClass,
+    });
+    if (outLegSize === 2 && flight.stopInfo?.stop1) {
+      segments.push({
+        airline: flight.airline,
+        from: flight.stopInfo.stop1,
+        to: flight.arrival.airport,
+        departure_time: undefined,
+        arrival_time: flight.landingTime || flight.arrival.time,
+        departure_date: flight.landingDate || flight.arrival.date,
+        segment_order: 2,
+        leg_index: flight.return ? 0 : null,
+        leg_size: outLegSize,
+        booking_class: flight.ticketClass,
+      });
+    }
+    if (flight.return) {
+      const retLegSize = 1 + ((flight.return.stops && flight.return.stopInfo?.stop1) ? 1 : 0);
+      segments.push({
+        airline: flight.airline,
+        from: flight.return.departure.airport,
+        to: flight.return.stopInfo?.stop1 || flight.return.arrival.airport,
+        departure_time: flight.return.departure.time,
+        arrival_time: retLegSize === 1 ? flight.return.arrival.time : undefined,
+        departure_date: flight.return.departure.date,
+        segment_order: 1,
+        leg_index: 1,
+        leg_size: retLegSize,
+        booking_class: flight.return.ticketClass,
+      });
+      if (retLegSize === 2 && flight.return.stopInfo?.stop1) {
+        segments.push({
+          airline: flight.airline,
+          from: flight.return.stopInfo.stop1,
+          to: flight.return.arrival.airport,
+          departure_time: undefined,
+          arrival_time: flight.return.landingTime || flight.return.arrival.time,
+          departure_date: flight.return.landingDate || flight.return.arrival.date,
+          segment_order: 2,
+          leg_index: 1,
+          leg_size: retLegSize,
+          booking_class: flight.return.ticketClass,
+        });
+      }
+    }
+    const input: RuleTicketInput = { segments, raw: flight };
+    return applyTicketRules(input, rulesDataset);
+  }, [flight, rulesDataset]);
+
+  const notesLine = formatNotesLine(ruleEffects.notes);
+  if (ruleEffects.hidden) return null;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ko-KR').format(price);
@@ -160,7 +230,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHol
     
     const copyText = `${outboundLine}${returnLine ? `\n\n${returnLine}` : ''}
 
-${getBaggageInfo()}, giá vé = ${formatPrice(adjustedPrice)}w`;
+${ruleEffects.baggage ?? getBaggageInfo()}, giá vé = ${formatPrice(ruleEffects.priceOverride ?? adjustedPrice)}w${notesLine ? `\n${notesLine}` : ''}`;
 
     navigator.clipboard.writeText(copyText).then(() => {
       toast({
@@ -326,8 +396,14 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(adjustedPrice)}w`;
           {/* Baggage and Price Info */}
           <div className={`border-t pt-4 transition-all duration-200`}>
             <div className={`text-sm ${isADT ? 'text-red-600 font-semibold' : 'text-gray-600 dark:text-gray-400'}`}>
-              {getBaggageInfo()}, giá vé = {formatPrice(adjustedPrice)}w
+              {ruleEffects.baggage ?? getBaggageInfo()}, giá vé = {formatPrice(ruleEffects.priceOverride ?? adjustedPrice)}w
             </div>
+            {notesLine && (
+              <div className="text-sm text-red-600 font-bold mt-1">{notesLine}</div>
+            )}
+            {ruleEffects.warnings.length > 0 && (
+              <div className="text-sm text-orange-600 font-semibold mt-1">⚠️ {ruleEffects.warnings.join(' | ')}</div>
+            )}
           </div>
         </div>
       </CardContent>
