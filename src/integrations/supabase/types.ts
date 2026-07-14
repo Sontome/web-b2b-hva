@@ -724,6 +724,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_campaigns: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ticket_log: {
         Row: {
           created_at: string | null
@@ -789,6 +822,74 @@ export type Database = {
           trip4?: string | null
         }
         Relationships: []
+      }
+      ticket_rules: {
+        Row: {
+          action: string
+          airline: string | null
+          arrival_time: string | null
+          booking_class: string | null
+          campaign_id: string
+          created_at: string
+          departure_time: string | null
+          enabled: boolean
+          id: string
+          leg_scope: string | null
+          match_scope: string | null
+          priority: number
+          require_other_leg_direct: boolean
+          route: string | null
+          segment_position: number | null
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          action: string
+          airline?: string | null
+          arrival_time?: string | null
+          booking_class?: string | null
+          campaign_id: string
+          created_at?: string
+          departure_time?: string | null
+          enabled?: boolean
+          id?: string
+          leg_scope?: string | null
+          match_scope?: string | null
+          priority?: number
+          require_other_leg_direct?: boolean
+          route?: string | null
+          segment_position?: number | null
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          action?: string
+          airline?: string | null
+          arrival_time?: string | null
+          booking_class?: string | null
+          campaign_id?: string
+          created_at?: string
+          departure_time?: string | null
+          enabled?: boolean
+          id?: string
+          leg_scope?: string | null
+          match_scope?: string | null
+          priority?: number
+          require_other_leg_direct?: boolean
+          route?: string | null
+          segment_position?: number | null
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_rules_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
