@@ -530,6 +530,22 @@ export const AdminDashboard = () => {
             </CardContent>
           </Card>
 
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate('/admin/ticket-rules')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ticket Rules</CardTitle>
+              <Settings className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Cấu hình</div>
+              <p className="text-xs text-muted-foreground">
+                Rule engine động cho hiển thị vé
+              </p>
+            </CardContent>
+          </Card>
+
 
 
 
