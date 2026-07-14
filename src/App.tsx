@@ -18,6 +18,7 @@ import PnrDelay from "./pages/PnrDelay";
 import DomainConfig from "./pages/DomainConfig";
 import InboundEmail from "./pages/InboundEmail";
 import AdminCart from "./pages/AdminCart";
+import TicketRules from "./pages/TicketRules";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,11 @@ const App = () => (
             <Route path="/admin/cart" element={
               <ProtectedRoute>
                 <AdminCart />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/ticket-rules" element={
+              <ProtectedRoute>
+                <TicketRules />
               </ProtectedRoute>
             } />
             <Route path="/cart" element={
