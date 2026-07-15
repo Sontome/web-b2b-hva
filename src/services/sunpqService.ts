@@ -14,14 +14,10 @@ export const searchSunPQFlights = async (searchData: {
   children?: number;
   infants?: number;
 }): Promise<SunPQSearchResult> => {
-  const body = {
+  const body: Record<string, unknown> = {
     departure: searchData.departure,
     arrival: searchData.arrival,
     dep_date: searchData.departureDate,
-    arr_date:
-      searchData.tripType === 'RT'
-        ? searchData.returnDate || searchData.departureDate
-        : searchData.departureDate,
     trip_type: searchData.tripType,
     adt: searchData.adults || 1,
     chd: searchData.children || 0,
@@ -29,6 +25,9 @@ export const searchSunPQFlights = async (searchData: {
     promo_code: '',
     currency: 'KRW',
   };
+  if (searchData.tripType === 'RT') {
+    body.arr_date = searchData.returnDate || searchData.departureDate;
+  }
   logTag('SUNPQ_SEARCH_REQUEST', body);
   try {
     const res = await fetch(`${SUNPQ_BASE}/check-ve-v3`, {
