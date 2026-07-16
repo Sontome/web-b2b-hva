@@ -419,8 +419,7 @@ const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchData }) =
                 const copyText = [
                   buildRouteText(trip.chiều_đi),
                   trip.chiều_về ? buildRouteText(trip.chiều_về) : '',
-                  baggageLine,
-                  `giá vé = ${fmtKRW.format(roundedPrice)}w`,
+                  `${baggageLine}, giá vé = ${fmtKRW.format(roundedPrice)}w`,
                   notesLine,
                 ]
                   .filter(Boolean)
