@@ -98,7 +98,7 @@ interface OtherFlightCardProps {
   flight: OtherFlight;
 }
 
-const OtherFlightCard: React.FC<OtherFlightCardProps> = ({ flight }) => {
+export const OtherFlightCard: React.FC<OtherFlightCardProps> = ({ flight }) => {
   const { toast } = useToast();
   const { playClickSound } = useHoverSound();
 
