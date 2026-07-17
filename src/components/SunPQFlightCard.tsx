@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Users } from 'lucide-react';
+import { Copy, Users, ShoppingCart, Plane } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SunPQTrip, SunPQLeg } from '@/types/sunpq';
 import { applyTicketRules, formatNotesLine } from '@/utils/ticketRuleEngine';
@@ -152,42 +152,54 @@ export const SunPQFlightCard: React.FC<SunPQFlightCardProps> = ({
   };
 
   return (
-    <div className={`border-2 rounded-lg p-4 bg-white ${effects.highlight ? 'border-red-500' : 'border-orange-400'}`}>
+    <div className={`border rounded-lg p-4 bg-white ${effects.highlight ? 'border-red-500' : 'border-gray-200'}`}>
       <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <div className="text-2xl font-bold text-gray-800 mb-1">
+            {fmtKRW.format(finalPrice)} KRW
+          </div>
+          <div className="text-xs text-gray-600">{ticketClasses}</div>
+          <div className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+            <Users className="h-4 w-4" /> Còn {seats} ghế
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <span className="bg-orange-500 text-white px-2 py-0.5 rounded text-xs font-bold">SUNPQ</span>
-          <span className="text-2xl font-bold text-gray-800">{fmtKRW.format(finalPrice)} KRW</span>
-        </div>
-        <div className="text-sm text-gray-600 flex items-center gap-1">
-          <Users className="h-4 w-4" /> Còn {seats} ghế
-        </div>
-      </div>
-
-      <div className="text-sm text-gray-700 mb-2">
-        <div>{buildRouteText(trip.chiều_đi)}</div>
-        {trip.chiều_về && <div>{buildRouteText(trip.chiều_về)}</div>}
-        <div className="text-xs text-gray-500 mt-1">{ticketClasses}</div>
-      </div>
-
-      <pre className="bg-orange-50 border border-orange-200 rounded p-3 font-sans font-medium text-xl text-black whitespace-pre-line mb-3">
-        {copyText}
-      </pre>
-      {notesLine && <div className="text-red-600 font-semibold text-sm mb-2">{notesLine}</div>}
-
-      <div className="flex gap-2 justify-end">
-        <Button size="sm" variant="outline" onClick={handleCopy}>
-          <Copy className="h-4 w-4 mr-1" /> Copy
-        </Button>
-        {onBook && (
-          <Button
-            size="sm"
-            className="bg-green-600 hover:bg-green-700 text-white"
-            onClick={() => onBook(trip)}
-          >
-            {bookLabel}
+          <Button size="sm" variant="outline" className="p-2" onClick={handleCopy} title="Copy">
+            <Copy className="h-4 w-4" />
           </Button>
+          {onBook && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="p-2"
+              onClick={() => onBook(trip)}
+              title={bookLabel}
+            >
+              <ShoppingCart className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+
+      <div className="text-sm text-gray-700 space-y-1 mb-2">
+        <div className="flex items-center">
+          <Plane className="w-4 h-4 text-primary mr-2" />
+          <span>{buildRouteText(trip.chiều_đi)}</span>
+        </div>
+        {trip.chiều_về && (
+          <div className="flex items-center">
+            <Plane className="w-4 h-4 text-primary mr-2 rotate-180" />
+            <span>{buildRouteText(trip.chiều_về)}</span>
+          </div>
         )}
       </div>
+
+      <div className="border-t pt-2 text-sm text-gray-600">
+        {baggageLine}, giá vé = {fmtKRW.format(roundedPrice)}w
+      </div>
+      {notesLine && <div className="text-red-600 font-semibold text-sm mt-1">{notesLine}</div>}
     </div>
   );
 };
