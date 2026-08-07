@@ -18,6 +18,7 @@ export const AIRLINE_NAMES: Record<string, string> = {
   '7C': 'Jeju',
   'YP': 'Premia',
   'RS': 'Air Seoul',
+  'WE': 'Parata Air',
 };
 
 // Baggage info for each airline
@@ -30,10 +31,11 @@ export const AIRLINE_BAGGAGE: Record<string, { carryOn: string; checked?: string
   'OZ': { carryOn: '10kg', checked: '23kg' },
   'RS': { carryOn: '10kg', checked: '15kg' },
   'BX': { carryOn: '10kg', checked: '15kg' },
+  'WE': { carryOn: '10kg', checked: '30kg' },
 };
 
 // Define which airlines go in each column
-const LEFT_COLUMN_AIRLINES = ['OZ', 'TW', 'LJ', 'BX']; // Asiana, Tway, Jin Air, Air Busan
+const LEFT_COLUMN_AIRLINES = ['OZ', 'TW', 'LJ', 'BX','WE']; // Asiana, Tway, Jin Air, Air Busan ,Parata Air
 const RIGHT_COLUMN_AIRLINES = ['KE', '7C', 'YP', 'RS']; // Korean Air, Jeju, Premia, Air Seoul
 
 export interface OtherFlight {
