@@ -233,6 +233,7 @@ const AIRLINE_NAMES: Record<string, string> = {
   'YP': 'Premia',
   'RS': 'Air Seoul',
   'VNA': 'Vietnam Airlines',
+  'WE': 'Parata Air',
 };
 
 // Response type for VNA flights including other airlines
