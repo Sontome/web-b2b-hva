@@ -500,6 +500,7 @@ export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): P
         // Other airline flight
         otherFlights.push({
           id: `other-${airlineCode}-${flight.chiều_đi.id}-${index}`,
+          miniFares: flight.thông_tin_chung?.miniFares ?? '',
           airline: airlineCode,
           airlineName: AIRLINE_NAMES[airlineCode],
           departure: {
