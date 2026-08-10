@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plane, Users, Copy } from 'lucide-react';
+import { Plane, Users, Copy, ShoppingCart } from 'lucide-react';
+import { OtherBookingModal } from '@/components/OtherBookingModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useHoverSound } from '@/hooks/useHoverSound';
@@ -96,12 +97,24 @@ export interface OtherFlight {
   };
 }
 
-interface OtherFlightCardProps {
-  flight: OtherFlight;
+export interface OtherBookingContext {
+  depDate: string;   // yyyy-MM-dd
+  arrDate?: string;  // yyyy-MM-dd
+  tripType: 'OW' | 'RT';
+  adults: number;
+  children?: number;
+  infants?: number;
+  onBookingSuccess?: (pnr: string) => void;
 }
 
-export const OtherFlightCard: React.FC<OtherFlightCardProps> = ({ flight }) => {
+interface OtherFlightCardProps {
+  flight: OtherFlight;
+  booking?: OtherBookingContext;
+}
+
+export const OtherFlightCard: React.FC<OtherFlightCardProps> = ({ flight, booking }) => {
   const { toast } = useToast();
+  const [bookingOpen, setBookingOpen] = useState(false);
   const { playClickSound } = useHoverSound();
 
   const formatPrice = (price: number) => {
@@ -252,6 +265,17 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(flight.adjustedPrice)}w`;
               >
                 <Copy className="w-4 h-4" />
               </Button>
+              {booking && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBookingOpen(true)}
+                  className="p-2 transition-all duration-200 hover:scale-105"
+                  title="Giữ vé"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </div>
 
@@ -316,6 +340,24 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(flight.adjustedPrice)}w`;
           </div>
         </div>
       </CardContent>
+      {booking && bookingOpen && (
+        <OtherBookingModal
+          isOpen={bookingOpen}
+          onClose={() => setBookingOpen(false)}
+          hang={flight.airline}
+          fromCode={flight.departure.airport}
+          toCode={flight.arrival.airport}
+          depDate={booking.depDate}
+          arrDate={booking.arrDate}
+          indexId={String(flight.id)}
+          tripType={booking.tripType}
+          adults={booking.adults}
+          children={booking.children ?? 0}
+          infants={booking.infants ?? 0}
+          maxSeats={Number(flight.availableSeats) || 9}
+          onBookingSuccess={booking.onBookingSuccess}
+        />
+      )}
     </Card>
   );
 };
@@ -325,6 +367,7 @@ interface OtherAirlinesModalProps {
   onClose: () => void;
   flights: OtherFlight[];
   allowedAirlines: string[];
+  booking?: OtherBookingContext;
 }
 
 export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
@@ -332,6 +375,7 @@ export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
   onClose,
   flights,
   allowedAirlines,
+  booking,
 }) => {
   // Filter flights by allowed airlines and group by airline
   const groupedFlights = React.useMemo(() => {
@@ -385,7 +429,7 @@ export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
                 </h3>
                 <div className="space-y-2">
                   {groupedFlights[airlineCode]?.map(flight => (
-                    <OtherFlightCard key={flight.id} flight={flight} />
+                    <OtherFlightCard key={flight.id} flight={flight} booking={booking} />
                   ))}
                 </div>
               </div>
@@ -411,7 +455,7 @@ export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
                 </h3>
                 <div className="space-y-2">
                   {groupedFlights[airlineCode]?.map(flight => (
-                    <OtherFlightCard key={flight.id} flight={flight} />
+                    <OtherFlightCard key={flight.id} flight={flight} booking={booking} />
                   ))}
                 </div>
               </div>
