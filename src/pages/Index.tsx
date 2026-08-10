@@ -603,6 +603,21 @@ export default function Index() {
 
   // Filter other flights by allowed airlines and find cheapest
   const filteredOtherFlights = otherFlights.filter(f => allowedOtherAirlines.includes(f.airline));
+  const localIso = (d?: Date | string) => {
+    if (!d) return '';
+    if (d instanceof Date) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    return String(d).split('T')[0];
+  };
+  const otherBookingContext = searchData ? {
+    depDate: localIso(searchData.departureDate),
+    arrDate: localIso(searchData.returnDate),
+    tripType: (searchData.tripType === 'round_trip' ? 'RT' : 'OW') as 'OW' | 'RT',
+    adults: searchData.passengers || 1,
+    children: 0,
+    infants: 0,
+  } : undefined;
   const cheapestOtherFlight = filteredOtherFlights.length > 0 
     ? filteredOtherFlights.reduce((prev, current) => 
         prev.adjustedPrice < current.adjustedPrice ? prev : current
@@ -725,7 +740,7 @@ export default function Index() {
                   <Plane className="w-5 h-5" /> Hãng khác rẻ nhất — {cheapestOtherFlight.airlineName}
                 </h3>
                 <div className="flex-1">
-                  <OtherFlightCard flight={cheapestOtherFlight} />
+                  <OtherFlightCard flight={cheapestOtherFlight} booking={otherBookingContext} />
                 </div>
                 <Button
                   className="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white"
@@ -949,6 +964,7 @@ export default function Index() {
             onClose={() => setShowOtherAirlinesModal(false)}
             flights={otherFlights}
             allowedAirlines={allowedOtherAirlines}
+            booking={otherBookingContext}
           />
 
           {/* SunPQ Modal */}
