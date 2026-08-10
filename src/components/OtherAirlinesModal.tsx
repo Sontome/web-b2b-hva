@@ -41,6 +41,8 @@ const RIGHT_COLUMN_AIRLINES = ['KE', '7C', 'YP', 'RS']; // Korean Air, Jeju, Pre
 
 export interface OtherFlight {
   id: string;
+  /** Giá trị miniFares từ API, dùng làm tham số `index` khi giữ vé */
+  miniFares?: string;
   airline: string;
   airlineName: string;
   departure: {
@@ -349,7 +351,7 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(flight.adjustedPrice)}w`;
           toCode={flight.arrival.airport}
           depDate={booking.depDate}
           arrDate={booking.arrDate}
-          indexId={String(flight.id)}
+          indexId={String(flight.miniFares ?? '')}
           tripType={booking.tripType}
           adults={booking.adults}
           children={booking.children ?? 0}
