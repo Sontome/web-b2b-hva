@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -214,6 +214,72 @@ export type Database = {
           row_sent?: boolean | null
           timecreat?: string
           type?: string | null
+        }
+        Relationships: []
+      }
+      kakanoti_apiapp: {
+        Row: {
+          email: string | null
+          hang: string | null
+          id: string
+          namelist: string
+          number_person: number | null
+          phone: string | null
+          pnr: string
+          price: number | null
+          status: string | null
+          timecreat: string
+          timesend: string | null
+          type: string | null
+        }
+        Insert: {
+          email?: string | null
+          hang?: string | null
+          id?: string
+          namelist: string
+          number_person?: number | null
+          phone?: string | null
+          pnr: string
+          price?: number | null
+          status?: string | null
+          timecreat?: string
+          timesend?: string | null
+          type?: string | null
+        }
+        Update: {
+          email?: string | null
+          hang?: string | null
+          id?: string
+          namelist?: string
+          number_person?: number | null
+          phone?: string | null
+          pnr?: string
+          price?: number | null
+          status?: string | null
+          timecreat?: string
+          timesend?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
+      kakao_apiapp_config: {
+        Row: {
+          domain: string
+          id: string
+          price_addon: number
+          updated_at: string | null
+        }
+        Insert: {
+          domain: string
+          id?: string
+          price_addon?: number
+          updated_at?: string | null
+        }
+        Update: {
+          domain?: string
+          id?: string
+          price_addon?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -920,6 +986,29 @@ export type Database = {
       cancel_expired_holding_tickets: { Args: never; Returns: undefined }
       clear_sent_phone: { Args: never; Returns: number }
       delete_old_reprice: { Args: never; Returns: undefined }
+      get_not_ready_latest_kakanoti_apiapp: {
+        Args: never
+        Returns: {
+          email: string | null
+          hang: string | null
+          id: string
+          namelist: string
+          number_person: number | null
+          phone: string | null
+          pnr: string
+          price: number | null
+          status: string | null
+          timecreat: string
+          timesend: string | null
+          type: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "kakanoti_apiapp"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_phone_email_to_pnr: {
         Args: { pnr_input: string }
         Returns: {
@@ -927,6 +1016,29 @@ export type Database = {
           name: string
           phone: string
         }[]
+      }
+      get_ready_latest_kakanoti_apiapp: {
+        Args: never
+        Returns: {
+          email: string | null
+          hang: string | null
+          id: string
+          namelist: string
+          number_person: number | null
+          phone: string | null
+          pnr: string
+          price: number | null
+          status: string | null
+          timecreat: string
+          timesend: string | null
+          type: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "kakanoti_apiapp"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_unsent_latest_kakao: {
         Args: never
@@ -946,6 +1058,7 @@ export type Database = {
         Returns: boolean
       }
       sync_kakanoti_phone_sent: { Args: never; Returns: undefined }
+      update_kakanoti_row_sent: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user"
