@@ -52,6 +52,7 @@ interface VNAFlightResponse {
       thuế_phí_công_cộng: string;
       số_ghế_còn: string;
       hành_lý_vna: string;
+      miniFares?: string;
     };
   }>;
 }
@@ -171,6 +172,7 @@ export interface Flight {
 // Interface for Other Airlines flights from VNA API
 export interface OtherAirlineFlight {
   id: string;
+  miniFares?: string;
   airline: string; // OZ, TW, LJ, BX, KE, 7C, YP, RS
   airlineName: string;
   departure: {
