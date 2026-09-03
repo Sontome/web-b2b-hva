@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type HeldAirline = "VJ" | "VNA" | "SUN" | "OTHER";
+export type HeldAirline = "VJ" | "VNA" | "SUN" | "OTHER" | (string & {});
 
 export interface HeldSegmentInput {
   segment_order: number;
