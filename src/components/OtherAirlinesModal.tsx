@@ -17,7 +17,6 @@ export const AIRLINE_NAMES: Record<string, string> = {
   'BX': 'Air Busan',
   'KE': 'Korean Air',
   '7C': 'Jeju',
-  'YP': 'Premia',
   'RS': 'Air Seoul',
   'WE': 'Parata Air',
 };
@@ -25,7 +24,6 @@ export const AIRLINE_NAMES: Record<string, string> = {
 // Baggage info for each airline
 export const AIRLINE_BAGGAGE: Record<string, { carryOn: string; checked?: string }> = {
   '7C': { carryOn: '10kg', checked: '15kg' },
-  'YP': { carryOn: '10kg', checked: '23kg' },
   'LJ': { carryOn: '10kg', checked: '15kg' },
   'TW': { carryOn: '10kg' },
   'KE': { carryOn: '10kg', checked: '23kg' },
@@ -37,7 +35,7 @@ export const AIRLINE_BAGGAGE: Record<string, { carryOn: string; checked?: string
 
 // Define which airlines go in each column
 const LEFT_COLUMN_AIRLINES = ['OZ', 'TW', 'LJ', 'BX','WE']; // Asiana, Tway, Jin Air, Air Busan ,Parata Air
-const RIGHT_COLUMN_AIRLINES = ['KE', '7C', 'YP', 'RS']; // Korean Air, Jeju, Premia, Air Seoul
+const RIGHT_COLUMN_AIRLINES = ['KE', '7C', 'RS']; // Korean Air, Jeju, Premia, Air Seoul
 
 export interface OtherFlight {
   id: string;
@@ -228,7 +226,6 @@ ${getBaggageInfo()}, giá vé = ${formatPrice(flight.adjustedPrice)}w`;
       'BX': 'bg-teal-500 hover:bg-teal-600',
       'KE': 'bg-sky-700 hover:bg-sky-800',
       '7C': 'bg-orange-600 hover:bg-orange-700',
-      'YP': 'bg-purple-500 hover:bg-purple-600',
       'RS': 'bg-blue-400 hover:bg-blue-500',
     };
     return colors[code] || 'bg-gray-500 hover:bg-gray-600';
@@ -450,7 +447,6 @@ export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
                 <h3 className="text-lg font-semibold mb-3" style={{ 
                   color: airlineCode === 'KE' ? '#0369A1' : 
                          airlineCode === '7C' ? '#EA580C' :
-                         airlineCode === 'YP' ? '#A855F7' :
                          airlineCode === 'RS' ? '#60A5FA' : '#6B7280'
                 }}>
                   {AIRLINE_NAMES[airlineCode]} ({groupedFlights[airlineCode]?.length || 0} chuyến)
