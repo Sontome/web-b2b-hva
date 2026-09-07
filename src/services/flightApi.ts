@@ -232,7 +232,6 @@ const AIRLINE_NAMES: Record<string, string> = {
   'BX': 'Air Busan',
   'KE': 'Korean Air',
   '7C': 'Jeju',
-  'YP': 'Premia',
   'RS': 'Air Seoul',
   'VNA': 'Vietnam Airlines',
   'WE': 'Parata Air',
