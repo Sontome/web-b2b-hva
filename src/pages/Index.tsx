@@ -28,6 +28,8 @@ import SunPQFlightCard, { sunpqTripTier, calcSunPQFinalPrice } from '@/component
 import { useTicketRulesDataset } from '@/hooks/useTicketRulesDataset';
 import SunPQTicketModal from '@/components/SunPQTicketModal';
 import { searchSunPQFlights } from '@/services/sunpqService';
+import { searchPremiaFlights, type PremiaTrip } from '@/services/premiaService';
+import PremiaFlightCard, { calcPremiaFinalPrice } from '@/components/PremiaFlightCard';
 import type { SunPQTrip } from '@/types/sunpq';
 import {
   DropdownMenu,
@@ -75,6 +77,9 @@ export default function Index() {
   const [sunpqLoading, setSunpqLoading] = useState(false);
   const [sunpqSearchPayload, setSunpqSearchPayload] = useState<any>(null);
   const [showSunPQTicketModal, setShowSunPQTicketModal] = useState(false);
+  const [premiaFlights, setPremiaFlights] = useState<PremiaTrip[]>([]);
+  const [premiaLoading, setPremiaLoading] = useState(false);
+  const [premiaExpanded, setPremiaExpanded] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     airlines: ['VJ', 'VNA'],
     showCheapestOnly: false,
@@ -352,6 +357,8 @@ export default function Index() {
     setOtherFlights([]); // Clear other airlines results
     setRawOtherFlights([]);
     setSunpqFlights([]);
+    setPremiaFlights([]);
+    setPremiaExpanded(false);
     setLastSearchIsRoundTrip(!!searchData.returnDate);
     setHasSearched(true);
     setSearchData(searchData);
@@ -411,6 +418,32 @@ export default function Index() {
         .then((res) => setSunpqFlights(res.body || []))
         .catch((e) => console.error('SunPQ search error', e))
         .finally(() => setSunpqLoading(false));
+    }
+
+    // Premia (YP) search - luồng riêng
+    if (profile?.perm_check_premia) {
+      const tripTypeP: 'OW' | 'RT' = searchData.tripType === 'round_trip' ? 'RT' : 'OW';
+      const fmtP = (d?: Date | string) => {
+        if (!d) return '';
+        if (d instanceof Date) {
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+        return String(d).split('T')[0];
+      };
+      setPremiaLoading(true);
+      searchPremiaFlights({
+        departure: searchData.from,
+        arrival: searchData.to,
+        departureDate: fmtP(searchData.departureDate),
+        returnDate: fmtP(searchData.returnDate),
+        tripType: tripTypeP,
+        adults: searchData.passengers || 1,
+        children: 0,
+        infants: 0,
+      })
+        .then((res) => setPremiaFlights(res.body || []))
+        .catch((e) => console.error('Premia search error', e))
+        .finally(() => setPremiaLoading(false));
     }
 
     try {
@@ -637,6 +670,17 @@ export default function Index() {
   const previewSunPQ = sunpqWithPrice.length > 0
     ? [...sunpqWithPrice].sort((a, b) => (a.tier - b.tier) || (a.finalPrice - b.finalPrice))[0]
     : null;
+  // Premia (YP)
+  const premiaOneWayFee = profile?.price_ow_premia ?? 0;
+  const premiaRoundTripFee = profile?.price_rt_premia ?? 0;
+  const premiaTripType: 'OW' | 'RT' = lastSearchIsRoundTrip ? 'RT' : 'OW';
+  const premiaSorted = [...(premiaFlights || [])].sort(
+    (a, b) =>
+      calcPremiaFinalPrice(a, premiaTripType, premiaOneWayFee, premiaRoundTripFee) -
+      calcPremiaFinalPrice(b, premiaTripType, premiaOneWayFee, premiaRoundTripFee)
+  );
+  const premiaVisible = premiaExpanded ? premiaSorted : premiaSorted.slice(0, 1);
+
   const { data: rulesDataset } = useTicketRulesDataset();
 
   // Check if we have direct flights (both departure and return for round-trip)
@@ -729,9 +773,10 @@ export default function Index() {
           />
         )}
 
-        {/* Other Airlines + SunPQ Preview (single full ticket + "Xem thêm") */}
+        {/* Other Airlines + SunPQ + Premia Preview (single full ticket + "Xem thêm") */}
         {((profile?.perm_check_other && cheapestOtherFlight && filteredOtherFlights.length > 0) ||
-          (profile?.perm_check_sunpq && (sunpqLoading || previewSunPQ))) && (
+          (profile?.perm_check_sunpq && (sunpqLoading || previewSunPQ)) ||
+          (profile?.perm_check_premia && (premiaLoading || premiaSorted.length > 0))) && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-stretch">
             {/* Other Airlines preview */}
             {profile?.perm_check_other && cheapestOtherFlight && filteredOtherFlights.length > 0 ? (
@@ -749,9 +794,7 @@ export default function Index() {
                   Xem thêm {filteredOtherFlights.length} vé hãng khác
                 </Button>
               </div>
-            ) : (
-              <div />
-            )}
+            ) : null}
 
             {/* SunPQ preview */}
             {profile?.perm_check_sunpq && (sunpqLoading || previewSunPQ) ? (
@@ -786,9 +829,55 @@ export default function Index() {
                   </Button>
                 )}
               </div>
-            ) : (
-              <div />
+            ) : null}
+
+            {/* Premia (YP) — 1 ô đầu tiên + các ô mở rộng nằm chung lưới */}
+            {profile?.perm_check_premia && premiaLoading && premiaSorted.length === 0 && (
+              <div className="flex flex-col h-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 animate-fade-in">
+                <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-3 flex items-center gap-2">
+                  <Plane className="w-5 h-5" /> Premia đang tìm...
+                </h3>
+                <div className="flex-1 text-center py-8 text-purple-600 text-sm">
+                  Đang tải kết quả từ Air Premia...
+                </div>
+              </div>
             )}
+            {profile?.perm_check_premia &&
+              premiaVisible.map((trip, idx) => (
+                <div
+                  key={`premia-${idx}`}
+                  className="flex flex-col h-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4 animate-fade-in"
+                >
+                  <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-3 flex items-center gap-2">
+                    <Plane className="w-5 h-5" /> Premia
+                  </h3>
+                  <div className="flex-1">
+                    <PremiaFlightCard
+                      trip={trip}
+                      tripType={premiaTripType}
+                      oneWayFee={premiaOneWayFee}
+                      roundTripFee={premiaRoundTripFee}
+                    />
+                  </div>
+                  {idx === 0 && !premiaExpanded && premiaSorted.length > 1 && (
+                    <Button
+                      className="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={() => setPremiaExpanded(true)}
+                    >
+                      Hiện thêm {premiaSorted.length - 1} vé Premia
+                    </Button>
+                  )}
+                  {idx === 0 && premiaExpanded && premiaSorted.length > 1 && (
+                    <Button
+                      variant="outline"
+                      className="mt-3 w-full border-purple-300 text-purple-700 hover:bg-purple-50"
+                      onClick={() => setPremiaExpanded(false)}
+                    >
+                      Thu gọn
+                    </Button>
+                  )}
+                </div>
+              ))}
           </div>
         )}
 
