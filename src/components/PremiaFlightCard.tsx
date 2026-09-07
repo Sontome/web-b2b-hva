@@ -9,7 +9,7 @@ const fmtKRW = new Intl.NumberFormat('ko-KR');
 /** Hành lý theo mã "hành_lý_vna" của Premia */
 export const premiaBaggageLine = (code?: string): string => {
   const c = (code || '').trim().toUpperCase();
-  if (c === 'YS') return 'Premia 10kg xách tay, 45kg ký gửi';
+  if (c === 'YS') return 'Premia 10kg xách tay, 46kg ký gửi';
   return 'Premia 10kg xách tay, 30kg ký gửi';
 };
 
