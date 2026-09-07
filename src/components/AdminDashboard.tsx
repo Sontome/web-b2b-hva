@@ -44,6 +44,9 @@ interface Profile {
   perm_check_sunpq?: boolean;
   price_ow_sunpq?: number;
   price_rt_sunpq?: number;
+  perm_check_premia?: boolean;
+  price_ow_premia?: number;
+  price_rt_premia?: number;
   hold_ticket_quantity: number;
   apikey_telegram: string | null;
   idchat_telegram: string | null;
@@ -91,6 +94,9 @@ export const AdminDashboard = () => {
     perm_check_sunpq: false,
     price_ow_sunpq: 0,
     price_rt_sunpq: 0,
+    perm_check_premia: false,
+    price_ow_premia: 0,
+    price_rt_premia: 0,
     hold_ticket_quantity: 0,
     apikey_telegram: '',
     idchat_telegram: '',
@@ -261,6 +267,9 @@ export const AdminDashboard = () => {
       perm_check_sunpq: profile.perm_check_sunpq || false,
       price_ow_sunpq: profile.price_ow_sunpq || 0,
       price_rt_sunpq: profile.price_rt_sunpq || 0,
+      perm_check_premia: profile.perm_check_premia || false,
+      price_ow_premia: profile.price_ow_premia || 0,
+      price_rt_premia: profile.price_rt_premia || 0,
       hold_ticket_quantity: profile.hold_ticket_quantity || 0,
       apikey_telegram: profile.apikey_telegram || '',
       idchat_telegram: profile.idchat_telegram || '',
@@ -313,6 +322,9 @@ export const AdminDashboard = () => {
           perm_check_sunpq: editForm.perm_check_sunpq,
           price_ow_sunpq: editForm.price_ow_sunpq,
           price_rt_sunpq: editForm.price_rt_sunpq,
+          perm_check_premia: editForm.perm_check_premia,
+          price_ow_premia: editForm.price_ow_premia,
+          price_rt_premia: editForm.price_rt_premia,
           hold_ticket_quantity: editForm.hold_ticket_quantity,
           perm_hold_ticket: permHoldTicket,
           apikey_telegram: editForm.apikey_telegram || null,
@@ -1019,6 +1031,45 @@ export const AdminDashboard = () => {
                                       id="perm_check_sunpq"
                                       checked={!!editForm.perm_check_sunpq}
                                       onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, perm_check_sunpq: checked }))}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Premia Section */}
+                              <div className="col-span-2 pt-4 border-t">
+                                <h3 className="text-lg font-semibold text-purple-600 mb-3">Premia (YP)</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="price_ow_premia">Phí Premia 1 chiều (KRW)</Label>
+                                    <Input
+                                      id="price_ow_premia"
+                                      type="number"
+                                      value={editForm.price_ow_premia}
+                                      onChange={(e) => setEditForm(prev => ({ ...prev, price_ow_premia: parseFloat(e.target.value) || 0 }))}
+                                      placeholder="0"
+                                      min="0"
+                                      step="1000"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="price_rt_premia">Phí Premia khứ hồi (KRW)</Label>
+                                    <Input
+                                      id="price_rt_premia"
+                                      type="number"
+                                      value={editForm.price_rt_premia}
+                                      onChange={(e) => setEditForm(prev => ({ ...prev, price_rt_premia: parseFloat(e.target.value) || 0 }))}
+                                      placeholder="0"
+                                      min="0"
+                                      step="1000"
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between col-span-2">
+                                    <Label htmlFor="perm_check_premia">Cho phép check vé Premia</Label>
+                                    <Switch
+                                      id="perm_check_premia"
+                                      checked={!!editForm.perm_check_premia}
+                                      onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, perm_check_premia: checked }))}
                                     />
                                   </div>
                                 </div>
