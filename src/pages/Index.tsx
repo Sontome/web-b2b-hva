@@ -80,6 +80,7 @@ export default function Index() {
   const [premiaFlights, setPremiaFlights] = useState<PremiaTrip[]>([]);
   const [premiaLoading, setPremiaLoading] = useState(false);
   const [premiaExpanded, setPremiaExpanded] = useState(false);
+  const [premiaStatus, setPremiaStatus] = useState<string | undefined>(undefined);
   const [filters, setFilters] = useState<FilterOptions>({
     airlines: ['VJ', 'VNA'],
     showCheapestOnly: false,
@@ -359,6 +360,7 @@ export default function Index() {
     setSunpqFlights([]);
     setPremiaFlights([]);
     setPremiaExpanded(false);
+    setPremiaStatus(undefined);
     setLastSearchIsRoundTrip(!!searchData.returnDate);
     setHasSearched(true);
     setSearchData(searchData);
@@ -441,7 +443,10 @@ export default function Index() {
         children: 0,
         infants: 0,
       })
-        .then((res) => setPremiaFlights(res.body || []))
+        .then((res) => {
+          setPremiaFlights(res.body || []);
+          setPremiaStatus(res.trạng_thái);
+        })
         .catch((e) => console.error('Premia search error', e))
         .finally(() => setPremiaLoading(false));
     }
@@ -857,6 +862,7 @@ export default function Index() {
                       tripType={premiaTripType}
                       oneWayFee={premiaOneWayFee}
                       roundTripFee={premiaRoundTripFee}
+                      isReference={premiaStatus === 'adjacent'}
                     />
                   </div>
                   {idx === 0 && !premiaExpanded && premiaSorted.length > 1 && (
