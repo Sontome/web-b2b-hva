@@ -37,6 +37,7 @@ export interface PremiaSearchResult {
   body: PremiaTrip[];
   session_key?: string;
   error?: string;
+  trạng_thái?: string;
 }
 
 const PREMIA_BASE = 'https://apilive.hanvietair.com/premia';
@@ -75,7 +76,12 @@ export const searchPremiaFlights = async (searchData: {
     const data = await res.json();
     console.log('[PREMIA_SEARCH_RESPONSE]', data);
     const list: PremiaTrip[] = data?.body ?? [];
-    return { status_code: data?.status_code ?? 200, body: list, session_key: data?.session_key };
+    return {
+      status_code: data?.status_code ?? 200,
+      body: list,
+      session_key: data?.session_key,
+      trạng_thái: data?.trạng_thái,
+    };
   } catch (err: any) {
     console.log('[PREMIA_SEARCH_EXCEPTION]', err?.message);
     return { status_code: 500, body: [], error: err?.message || 'Network error' };
