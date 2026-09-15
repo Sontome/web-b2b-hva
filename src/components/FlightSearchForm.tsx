@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, Plane, RefreshCw } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 export interface SearchFormData {
@@ -56,6 +56,8 @@ const vietnameseAirports = [
 ];
 
 export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, loading }) => {
+  const today = startOfDay(new Date());
+
   const [formData, setFormData] = useState<SearchFormData>({
     from: 'ICN', // Default to ICN
     to: 'HAN', // Default to HAN
@@ -252,8 +254,8 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, lo
                     mode="single"
                     selected={formData.departureDate}
                     onSelect={handleDepartureDateSelect}
-                    disabled={(date) => date < new Date()}
-                    defaultMonth={departureDateMonth || formData.departureDate || new Date()}
+                    disabled={(date) => date < today}
+                    defaultMonth={departureDateMonth || formData.departureDate || today}
                     initialFocus
                   />
                 </PopoverContent>
@@ -316,8 +318,8 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, lo
                     mode="single"
                     selected={formData.returnDate}
                     onSelect={handleReturnDateSelect}
-                    disabled={(date) => date < (formData.departureDate || new Date())}
-                    defaultMonth={returnDateMonth || formData.returnDate || formData.departureDate || new Date()}
+                    disabled={(date) => date < (formData.departureDate ? startOfDay(formData.departureDate) : today)}
+                    defaultMonth={returnDateMonth || formData.returnDate || formData.departureDate || today}
                     initialFocus
                   />
                 </PopoverContent>
