@@ -41,6 +41,7 @@ interface Profile {
   perm_check_discount: boolean;
   perm_check_vna_issued: boolean;
   perm_reprice: boolean;
+  perm_reprice_sun?: boolean;
   perm_check_sunpq?: boolean;
   price_ow_sunpq?: number;
   price_rt_sunpq?: number;
@@ -91,6 +92,7 @@ export const AdminDashboard = () => {
     perm_check_discount: false,
     perm_check_vna_issued: false,
     perm_reprice: false,
+    perm_reprice_sun: false,
     perm_check_sunpq: false,
     price_ow_sunpq: 0,
     price_rt_sunpq: 0,
@@ -264,6 +266,7 @@ export const AdminDashboard = () => {
       perm_check_discount: profile.perm_check_discount || false,
       perm_check_vna_issued: profile.perm_check_vna_issued || false,
       perm_reprice: profile.perm_reprice || false,
+      perm_reprice_sun: profile.perm_reprice_sun || false,
       perm_check_sunpq: profile.perm_check_sunpq || false,
       price_ow_sunpq: profile.price_ow_sunpq || 0,
       price_rt_sunpq: profile.price_rt_sunpq || 0,
@@ -319,6 +322,7 @@ export const AdminDashboard = () => {
           perm_check_discount: editForm.perm_check_discount,
           perm_check_vna_issued: editForm.perm_check_vna_issued,
           perm_reprice: editForm.perm_reprice,
+          perm_reprice_sun: editForm.perm_reprice_sun,
           perm_check_sunpq: editForm.perm_check_sunpq,
           price_ow_sunpq: editForm.price_ow_sunpq,
           price_rt_sunpq: editForm.price_rt_sunpq,
@@ -1170,10 +1174,19 @@ export const AdminDashboard = () => {
                                     checked={editForm.perm_reprice}
                                     onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, perm_reprice: checked }))}
                                   />
+                                 </div>
+
+                                <div className="flex items-center justify-between">
+                                  <Label htmlFor="perm_reprice_sun">Reprice SUN</Label>
+                                  <Switch
+                                    id="perm_reprice_sun"
+                                    checked={!!editForm.perm_reprice_sun}
+                                    onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, perm_reprice_sun: checked }))}
+                                  />
                                 </div>
 
-                                <div className="space-y-2">
-                                  <Label htmlFor="hold_ticket_quantity">
+                                 <div className="space-y-2">
+                                   <Label htmlFor="hold_ticket_quantity">
                                     Giữ vé (Tối đa: {editForm.hold_ticket_quantity || 0})
                                   </Label>
                                   <Input
