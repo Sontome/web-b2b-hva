@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { SunRepricePanel } from '@/components/reprice/SunRepricePanel';
 
 interface RepriceModalProps {
   isOpen: boolean;
@@ -50,6 +52,9 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { profile } = useAuth();
+  const canSun = !!(profile as any)?.perm_reprice_sun;
+  const [airline, setAirline] = useState<'VNA' | 'SUN' | null>(null);
   const [pnrInput, setPnrInput] = useState('');
   const [customerTypes, setCustomerTypes] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -60,6 +65,7 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
 
   const handleClose = () => {
     setPnrInput('');
+    setAirline(null);
     setCustomerTypes({});
     setStep('check');
     setPnrResults([]);
@@ -278,8 +284,44 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
             Reprice PNR
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6 py-4">
+
+        {!airline && (
+          <div className="space-y-3 py-4">
+            <p className="text-sm text-muted-foreground text-center">Chọn hãng cần reprice</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" className="h-16" onClick={() => setAirline('VNA')}>
+                VNA
+              </Button>
+              <Button
+                variant="outline"
+                className="h-16"
+                disabled={!canSun}
+                onClick={() => setAirline('SUN')}
+              >
+                SUN
+              </Button>
+            </div>
+            {!canSun && (
+              <p className="text-xs text-muted-foreground text-center">
+                Tài khoản của bạn chưa được cấp quyền reprice SUN.
+              </p>
+            )}
+          </div>
+        )}
+
+        {airline === 'SUN' && (
+          <div className="py-4 space-y-4">
+            <Button variant="ghost" size="sm" onClick={() => setAirline(null)}>
+              ← Chọn hãng khác
+            </Button>
+            <SunRepricePanel />
+          </div>
+        )}
+
+        <div className={`space-y-6 py-4 ${airline === 'VNA' ? '' : 'hidden'}`}>
+          <Button variant="ghost" size="sm" onClick={() => setAirline(null)}>
+            ← Chọn hãng khác
+          </Button>
           <div>
             <Label htmlFor="pnr-input">Mã PNR</Label>
             <Input
