@@ -106,9 +106,9 @@ export const SunUpdatePnrPanel: React.FC<{ onBack?: () => void }> = ({ onBack })
         const title = String(p.title || '').toUpperCase();
         const doc: DocForm = {
           type: 'P',
-          number: d.number || '',
-          nationality: d.nationality || '',
-          country: d.country || '',
+          number: d.number || 'C123456',
+          nationality: d.nationality || 'VN',
+          country: d.country || 'VN',
           gender: d.gender || (title === 'MISS' || title === 'MRS' ? 'F' : 'M'),
           date_of_birth: d.date_of_birth || '',
           expiry_date: d.expiry_date || '',
