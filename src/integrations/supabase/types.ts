@@ -26,6 +26,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ape_email: {
+        Row: {
+          created_at: string
+          email: string
+          hang: string | null
+          id: number
+          pnr: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          hang?: string | null
+          id?: never
+          pnr: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          hang?: string | null
+          id?: never
+          pnr?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       domain_config: {
         Row: {
           config_json: Json
