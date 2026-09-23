@@ -19,7 +19,7 @@ type FilterType = 'all' | 'month' | 'day';
 export const SearchStatistics = () => {
   const [stats, setStats] = useState<SearchStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [filterType, setFilterType] = useState<FilterType>('day');
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [totalSearches, setTotalSearches] = useState(0);
