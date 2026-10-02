@@ -1,22 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import type { TicketCampaign, TicketRule, TicketRulesDataset } from '@/types/ticketRules';
+import type { TicketRulesDataset } from '@/types/ticketRules';
+import { CACHE_TTL, loadTicketRulesDataset } from '@/lib/appDataCache';
 
 export function useTicketRulesDataset() {
   return useQuery<TicketRulesDataset>({
     queryKey: ['ticket-rules-dataset'],
-    staleTime: 60_000,
-    queryFn: async () => {
-      const [campaignsRes, rulesRes] = await Promise.all([
-        supabase.from('ticket_campaigns').select('*'),
-        supabase.from('ticket_rules').select('*'),
-      ]);
-      if (campaignsRes.error) throw campaignsRes.error;
-      if (rulesRes.error) throw rulesRes.error;
-      return {
-        campaigns: (campaignsRes.data || []) as TicketCampaign[],
-        rules: (rulesRes.data || []) as TicketRule[],
-      };
-    },
+    queryFn: () => loadTicketRulesDataset(),
+    staleTime: CACHE_TTL,
+    gcTime: CACHE_TTL,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false,
   });
 }
