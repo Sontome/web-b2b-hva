@@ -1,7 +1,8 @@
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { loadProfile, loadUserRole, patchProfileCache, clearUserCache } from '@/lib/appDataCache';
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +14,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
+  refreshProfile: () => Promise<void>;
+  patchProfile: (patch: Record<string, any>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -31,67 +34,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const currentUserIdRef = useRef<string | null>(null);
+
+  const fetchProfile = async (userId: string, force = false) => {
     try {
-      // Fetch profile data
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error fetching profile:', profileError);
-        return;
-      }
-      
-      // Fetch user role
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
-      
+      const [profileData, role] = await Promise.all([
+        loadProfile(userId, force),
+        loadUserRole(userId, force).catch(() => null),
+      ]);
+      // Ignore results if the session switched to a different user meanwhile
+      if (currentUserIdRef.current !== userId) return;
       setProfile({
         ...profileData,
-        role: roleData?.role || 'user'
+        role: role || 'user'
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
   };
 
+  const applySession = (session: Session | null) => {
+    setSession(session);
+    setUser(session?.user ?? null);
+    const newId = session?.user?.id ?? null;
+    if (newId !== currentUserIdRef.current) {
+      currentUserIdRef.current = newId;
+      setProfile(null);
+      if (newId) fetchProfile(newId); // cache + in-flight dedupe => at most 1 request each
+    }
+  };
+
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-        
+      (_event, session) => {
+        setTimeout(() => applySession(session), 0);
         setLoading(false);
       }
     );
 
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
+      applySession(session);
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const refreshProfile = async () => {
+    if (currentUserIdRef.current) await fetchProfile(currentUserIdRef.current, true);
+  };
+
+  const patchProfile = (patch: Record<string, any>) => {
+    const id = currentUserIdRef.current;
+    if (!id) return;
+    patchProfileCache(id, patch);
+    setProfile((prev: any) => (prev ? { ...prev, ...patch } : prev));
+  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -120,6 +118,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    if (currentUserIdRef.current) clearUserCache(currentUserIdRef.current);
+    currentUserIdRef.current = null;
     // Clear all local storage related to auth
     localStorage.removeItem('sb-imxesrkdgciojihloufi-auth-token');
     localStorage.clear();
@@ -163,6 +163,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
     resetPassword,
     updatePassword,
+    refreshProfile,
+    patchProfile,
   };
 
   return (
