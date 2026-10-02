@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
 export const UserTelegramSettings = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, patchProfile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [apikey, setApikey] = useState('');
   const [idchat, setIdchat] = useState('');
@@ -37,6 +37,7 @@ export const UserTelegramSettings = () => {
         .eq('id', user.id);
 
       if (error) throw error;
+      patchProfile({ apikey_telegram: apikey || null, idchat_telegram: idchat || null });
 
       toast({
         title: "Thành công",
