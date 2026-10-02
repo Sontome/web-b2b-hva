@@ -34,7 +34,7 @@ export const PNRCheckModal = ({
   const [files, setFiles] = useState<PNRFile[]>([]);
   const [banner, setBanner] = useState(' ');
 
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const handleClose = () => {
     setPnrCode('');
@@ -48,13 +48,7 @@ export const PNRCheckModal = ({
   const loadUserBanner = async () => {
     if (!user?.id) return;
 
-    const { data } = await supabase
-      .from('profiles')
-      .select('banner')
-      .eq('id', user.id)
-      .single();
-
-    setBanner(data?.banner || ' ');
+    setBanner(profile?.banner || ' ');
   };
 
   useEffect(() => {
