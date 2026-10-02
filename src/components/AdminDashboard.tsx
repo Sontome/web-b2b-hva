@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { clearUserCache } from '@/lib/appDataCache';
 import { toast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { SearchStatistics } from './SearchStatistics';
@@ -365,6 +366,7 @@ export const AdminDashboard = () => {
         title: "Thành công",
         description: "Đã cập nhật thông tin người dùng",
       });
+      clearUserCache(editingProfile.id);
       fetchProfiles();
       setEditingProfile(null);
     } catch (error) {
