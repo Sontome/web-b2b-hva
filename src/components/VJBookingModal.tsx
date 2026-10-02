@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Copy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { loadProfile as loadCachedProfile, patchProfileCache } from "@/lib/appDataCache";
 
 export interface PassengerInfo {
   Họ: string;
@@ -84,11 +85,7 @@ export const BookingModal = ({
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("ticket_email, ticket_phone")
-          .eq("id", user.id)
-          .single();
+        const profile = await loadCachedProfile(user.id).catch(() => null);
 
         if (profile) {
           setTicketEmail(profile.ticket_email || "");
@@ -394,6 +391,7 @@ export const BookingModal = ({
             ticket_phone: ticketPhone,
           })
           .eq("id", user.id);
+        patchProfileCache(user.id, { ticket_email: ticketEmail, ticket_phone: ticketPhone });
       }
 
       // Nếu mode = 'save', chỉ lưu thông tin và không gọi API
