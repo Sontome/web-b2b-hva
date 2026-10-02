@@ -22,7 +22,7 @@ interface EmailTicketModalProps {
 }
 
 export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => {
-  const { user } = useAuth();
+  const { user, profile: authProfile, patchProfile } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     tenKhach: '',
@@ -38,11 +38,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
   useEffect(() => {
     if (isOpen && user) {
       const loadUserBanner = async () => {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('banner')
-          .eq('id', user.id)
-          .single();
+        const profile = authProfile;
         
         if (profile?.banner) {
           setFormData(prev => ({
@@ -159,6 +155,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
             .from('profiles')
             .update({ banner: formData.banner })
             .eq('id', user.id);
+          patchProfile({ banner: formData.banner });
         }
         
         toast.success('Đã thêm hàng chờ gửi mail thành công', {
