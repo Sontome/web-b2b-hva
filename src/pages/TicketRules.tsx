@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateTicketRulesCache } from '@/lib/appDataCache';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +32,7 @@ const emptyRule = (campaign_id = ''): Partial<TicketRule> => ({
 
 export default function TicketRules() {
   const { profile } = useAuth();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<TicketCampaign[]>([]);
   const [rules, setRules] = useState<TicketRule[]>([]);
@@ -44,6 +47,8 @@ export default function TicketRules() {
   }, [profile, navigate]);
 
   const load = async () => {
+    invalidateTicketRulesCache();
+    queryClient.invalidateQueries({ queryKey: ['ticket-rules-dataset'] });
     setLoading(true);
     const [c, r] = await Promise.all([
       supabase.from('ticket_campaigns').select('*').order('created_at', { ascending: false }),
