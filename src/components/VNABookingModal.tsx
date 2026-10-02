@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2, Copy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { loadProfile as loadCachedProfile, patchProfileCache } from "@/lib/appDataCache";
 import { format, differenceInYears, differenceInDays } from 'date-fns';
 import { DateInput } from './DateInput';
 
@@ -69,11 +70,7 @@ export const VNABookingModal = ({
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("ticket_email, ticket_phone")
-          .eq("id", user.id)
-          .single();
+        const profile = await loadCachedProfile(user.id).catch(() => null);
 
         if (profile) {
           setTicketEmail(profile.ticket_email || "");
@@ -245,6 +242,7 @@ export const VNABookingModal = ({
             ticket_phone: ticketPhone,
           })
           .eq("id", user.id);
+        patchProfileCache(user.id, { ticket_email: ticketEmail, ticket_phone: ticketPhone });
       }
       for (const passenger of passengers) {
         if (!passenger.Họ.trim() || !passenger.Tên.trim()) {
