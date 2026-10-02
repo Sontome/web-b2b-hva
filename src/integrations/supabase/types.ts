@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      airline_baggage_defaults: {
+        Row: {
+          airline: string
+          bag_kg_per_piece: number | null
+          bag_pieces: number | null
+          carry_on_kg_per_piece: number | null
+          carry_on_pieces: number | null
+          enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          airline: string
+          bag_kg_per_piece?: number | null
+          bag_pieces?: number | null
+          carry_on_kg_per_piece?: number | null
+          carry_on_pieces?: number | null
+          enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          airline?: string
+          bag_kg_per_piece?: number | null
+          bag_pieces?: number | null
+          carry_on_kg_per_piece?: number | null
+          carry_on_pieces?: number | null
+          enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       always_send_phone: {
         Row: {
           phone: string
@@ -886,6 +916,7 @@ export type Database = {
           trip2: string | null
           trip3: string | null
           trip4: string | null
+          url_callback: string | null
         }
         Insert: {
           created_at?: string | null
@@ -907,6 +938,7 @@ export type Database = {
           trip2?: string | null
           trip3?: string | null
           trip4?: string | null
+          url_callback?: string | null
         }
         Update: {
           created_at?: string | null
@@ -928,6 +960,7 @@ export type Database = {
           trip2?: string | null
           trip3?: string | null
           trip4?: string | null
+          url_callback?: string | null
         }
         Relationships: []
       }
@@ -998,6 +1031,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ticket_rules_vps: {
+        Row: {
+          action: string
+          airline: string | null
+          arrival_time: string | null
+          booking_class: string | null
+          campaign_id: string | null
+          created_at: string
+          departure_time: string | null
+          enabled: boolean
+          end_date: string | null
+          id: string
+          leg_scope: string | null
+          match_scope: string | null
+          priority: number
+          require_other_leg_direct: boolean
+          route: string | null
+          segment_position: number | null
+          start_date: string | null
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          action: string
+          airline?: string | null
+          arrival_time?: string | null
+          booking_class?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          departure_time?: string | null
+          enabled?: boolean
+          end_date?: string | null
+          id?: string
+          leg_scope?: string | null
+          match_scope?: string | null
+          priority?: number
+          require_other_leg_direct?: boolean
+          route?: string | null
+          segment_position?: number | null
+          start_date?: string | null
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          action?: string
+          airline?: string | null
+          arrival_time?: string | null
+          booking_class?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          departure_time?: string | null
+          enabled?: boolean
+          end_date?: string | null
+          id?: string
+          leg_scope?: string | null
+          match_scope?: string | null
+          priority?: number
+          require_other_leg_direct?: boolean
+          route?: string | null
+          segment_position?: number | null
+          start_date?: string | null
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
