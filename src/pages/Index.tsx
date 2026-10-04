@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FlightSearchForm, SearchFormData } from '@/components/FlightSearchForm';
 import { FlightCard } from '@/components/FlightCard';
 import { FlightFilters, FilterOptions } from '@/components/FlightFilters';
-import { fetchVietJetFlights, fetchVietnamAirlinesFlights, Flight, OtherAirlineFlight } from '@/services/flightApi';
+import { fetchVietJetFlights, fetchVietnamAirlinesFlights, fetchVNAFlightsV4, Flight, OtherAirlineFlight } from '@/services/flightApi';
 import { searchLowFare, LowFareDay } from '../services/lowfareService';
 import { Button } from '@/components/ui/button';
 import { UserProfileDropdown } from '@/components/UserProfileDropdown';
@@ -477,12 +477,8 @@ export default function Index() {
         const vietnamAirlinesPromise = fetchVietnamAirlinesFlights(searchData);
         promises.push(vietnamAirlinesPromise);
         
-        // Handle Vietnam Airlines results as soon as they arrive
+        // v3 is now used only for other-airline fares (its VNA rows are ignored)
         vietnamAirlinesPromise.then(result => {
-          if (result.vnaFlights.length > 0) {
-            setFlights(prev => [...prev, ...result.vnaFlights]);
-            setTimeout(() => playNotificationSound(), 200);
-          }
           
           // Always store raw other airlines flights; processing happens in useMemo
           // so it correctly re-runs when profile loads/changes.
@@ -495,6 +491,18 @@ export default function Index() {
         });
       }
 
+      if (canCheckVNA) {
+        // VNA fares come from check-ve-v4; shown as soon as they arrive
+        const vnaV4Promise = fetchVNAFlightsV4(searchData);
+        promises.push(vnaV4Promise);
+        vnaV4Promise.then(vnaFlights => {
+          if (vnaFlights.length > 0) {
+            setFlights(prev => [...prev, ...vnaFlights]);
+            setTimeout(() => playNotificationSound(), 200);
+          }
+        }).catch(error => console.error('Vietnam Airlines v4 API error:', error));
+      }
+
       // Wait for all to complete to update filters and loading state
       const results = await Promise.allSettled(promises);
       let allFlights: Flight[] = [];
@@ -505,8 +513,6 @@ export default function Index() {
           const value = result.value;
           if (Array.isArray(value)) {
             allFlights = [...allFlights, ...value];
-          } else if (value && 'vnaFlights' in value) {
-            allFlights = [...allFlights, ...value.vnaFlights];
           }
         }
       });
