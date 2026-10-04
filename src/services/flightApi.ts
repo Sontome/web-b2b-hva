@@ -5,6 +5,7 @@ interface SearchFormData {
   returnDate: Date | undefined;
   passengers: number;
   tripType: 'one_way' | 'round_trip';
+  ptcCode?: 'VFR' | 'ADT' | 'STU';
 }
 
 interface VNAFlightResponse {
@@ -435,6 +436,15 @@ export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): P
       return { vnaFlights: [], otherFlights: [] };
     }
 
+    return parseVNAData(data);
+  } catch (error) {
+    console.error('Vietnam Airlines API error:', error);
+    throw error;
+  }
+}
+
+
+const parseVNAData = (data: VNAFlightResponse): VNAFlightsResult => {
     const vnaFlights: Flight[] = [];
     const otherFlights: OtherAirlineFlight[] = [];
 
@@ -556,8 +566,40 @@ export const fetchVietnamAirlinesFlights = async (searchData: SearchFormData): P
     });
 
     return { vnaFlights, otherFlights };
-  } catch (error) {
-    console.error('Vietnam Airlines API error:', error);
-    throw error;
-  }
-}
+};
+
+/** Default VNA passenger type: VFR from Korea, ADT from Vietnam (only ADT allowed). */
+export const KOREAN_AIRPORT_CODES = ['ICN', 'PUS', 'TAE'];
+export const getDefaultPtcCode = (from: string): 'VFR' | 'ADT' =>
+  KOREAN_AIRPORT_CODES.includes(from) ? 'VFR' : 'ADT';
+
+/** VNA fares via check-ve-v4 (same response shape as v3); returns VNA flights only. */
+export const fetchVNAFlightsV4 = async (searchData: SearchFormData): Promise<Flight[]> => {
+  if (!searchData.departureDate) return [];
+  const ymd = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const isRT = searchData.tripType === 'round_trip' && !!searchData.returnDate;
+  const fromKorea = KOREAN_AIRPORT_CODES.includes(searchData.from);
+  const ptc = fromKorea ? (searchData.ptcCode || 'VFR') : 'ADT';
+  const requestBody: Record<string, unknown> = {
+    trip_type: isRT ? 'RT' : 'OW',
+    origin: searchData.from,
+    destination: searchData.to,
+    depart_date: ymd(searchData.departureDate),
+    return_date: isRT ? ymd(searchData.returnDate as Date) : '',
+    adult: searchData.passengers,
+    child: 0,
+    infant: 0,
+    cabin_class: 'Y',
+    ptc_code: ptc,
+  };
+  const response = await fetch('https://apilive.hanvietair.com/vna/check-ve-v4', {
+    method: 'POST',
+    headers: { accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody),
+  });
+  if (!response.ok) throw new Error(`Vietnam Airlines v4 API error: ${response.status}`);
+  const data: VNAFlightResponse = await response.json();
+  if (data.status_code !== 200 || !data.body) return [];
+  return parseVNAData(data).vnaFlights;
+};
