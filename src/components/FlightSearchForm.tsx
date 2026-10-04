@@ -16,6 +16,7 @@ export interface SearchFormData {
   returnDate: Date | undefined;
   passengers: number;
   tripType: 'one_way' | 'round_trip';
+  ptcCode?: 'VFR' | 'ADT' | 'STU';
 }
 
 interface FlightSearchFormProps {
@@ -65,6 +66,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, lo
     returnDate: undefined,
     passengers: 1,
     tripType: 'round_trip', // Default to round trip
+    ptcCode: 'VFR', // ICN default -> VFR
   });
 
   const [departureDateOpen, setDepartureDateOpen] = useState(false);
@@ -117,6 +119,8 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, lo
   const handleFromChange = (value: string) => {
     setFormData(prev => {
       const newFormData = { ...prev, from: value };
+      // Korea departures default VFR; Vietnam departures only ADT
+      newFormData.ptcCode = koreanAirports.some(a => a.code === value) ? 'VFR' : 'ADT';
       
       // Check if the new departure is Korean or Vietnamese
       const newIsFromKorean = koreanAirports.some(airport => airport.code === value);
@@ -182,6 +186,27 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, lo
             />
             <span className="text-gray-700 text-sm font-medium group-hover:text-blue-600 transition-colors whitespace-nowrap">Một chiều</span>
           </label>
+        </div>
+
+        {/* Passenger type (VNA) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-gray-600 font-medium">Type</Label>
+            <Select
+              value={isFromKorean ? (formData.ptcCode || 'VFR') : 'ADT'}
+              onValueChange={(v) => setFormData(prev => ({ ...prev, ptcCode: v as 'VFR' | 'ADT' | 'STU' }))}
+              disabled={!isFromKorean}
+            >
+              <SelectTrigger className="h-10 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(isFromKorean ? ['VFR', 'ADT', 'STU'] : ['ADT']).map(t => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
