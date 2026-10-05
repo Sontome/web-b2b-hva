@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FlightSearchForm, SearchFormData, isKoreanDeparture, type FlightSearchFormHandle } from '@/components/FlightSearchForm';
 import { FlightCard } from '@/components/FlightCard';
 import { FlightFilters, FilterOptions } from '@/components/FlightFilters';
-import { fetchVietJetFlights, fetchVietnamAirlinesFlights, fetchVNAFlightsV4, Flight, OtherAirlineFlight } from '@/services/flightApi';
+import { fetchVietJetFlights, fetchVietnamAirlinesFlights, fetchVNAFlightsV4, getDefaultPtcCode, Flight, OtherAirlineFlight } from '@/services/flightApi';
 import { fetchVNAMultiCity, type MultiCityFlight, type MultiCitySearchData } from '@/services/vnaMultiCityApi';
 import { VnaMultiCityCard } from '@/components/VnaMultiCityCard';
 import { searchLowFare, LowFareDay } from '../services/lowfareService';
@@ -1109,6 +1109,7 @@ export default function Index() {
                 setShowVNABookingModal(false);
                 setSelectedFlight(null);
               }}
+              ptcCode={selectedFlight.ptcCode || lastSearchData?.ptcCode || getDefaultPtcCode(selectedFlight.departure.airport)}
               flightInfo={{
                 dep: selectedFlight.departure.airport,
                 arr: selectedFlight.arrival.airport,
