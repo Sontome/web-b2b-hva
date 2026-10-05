@@ -14,17 +14,20 @@ import { applyTicketRules, formatNotesLine } from '@/utils/ticketRuleEngine';
 import type { RuleSegmentInput, RuleTicketInput } from '@/types/ticketRules';
 
 interface FlightCardProps {
+  /** Show the "Check giá STU" button on VNA cards (type != STU and Korean departure) */
+  showStuCheck?: boolean;
+  /** Called when user clicks "Check giá STU" — re-runs the current search with type STU */
+  onCheckStu?: () => void;
   flight: Flight;
   priceMode: 'Page' | 'Live';
   onHoldTicket?: (flight: Flight) => void;
 }
 
-export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHoldTicket }) => {
+export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHoldTicket, showStuCheck, onCheckStu }) => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const { playClickSound } = useHoverSound();
   const [adjustedPrice, setAdjustedPrice] = useState(flight.price);
-  const [stuApplied, setStuApplied] = useState(false);
 
   useEffect(() => {
     // Apply airline-specific markup
@@ -163,7 +166,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHol
     if (flight.airline === 'VJ') {
       return 'Vietjet 7kg xách tay, 20kg ký gửi';
     } else {
-      const prefix = stuApplied ? 'VNairlines DHS' : 'VNairlines';
+      const prefix = 'VNairlines';
       if (flight.baggageType === 'ADT') {
         return `${prefix} 10kg xách tay, 23kg ký gửi`;
       } else {
@@ -301,10 +304,8 @@ ${ruleEffects.baggage ?? getBaggageInfo()}, giá vé = ${formatPrice(ruleEffects
                   flight={flight}
                   currentPrice={adjustedPrice}
                   passengerCount={1}
-                  onApplyStuPrice={(p) => {
-                    setAdjustedPrice(Math.round(p / 100) * 100);
-                    setStuApplied(true);
-                  }}
+                  showStuCheck={showStuCheck}
+                  onCheckStu={onCheckStu}
                 />
               )}
             
