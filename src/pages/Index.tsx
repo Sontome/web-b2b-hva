@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FlightSearchForm, SearchFormData } from '@/components/FlightSearchForm';
+import { FlightSearchForm, SearchFormData, isKoreanDeparture, type FlightSearchFormHandle } from '@/components/FlightSearchForm';
 import { FlightCard } from '@/components/FlightCard';
 import { FlightFilters, FilterOptions } from '@/components/FlightFilters';
 import { fetchVietJetFlights, fetchVietnamAirlinesFlights, fetchVNAFlightsV4, Flight, OtherAirlineFlight } from '@/services/flightApi';
@@ -57,6 +57,7 @@ export default function Index() {
   const [reverseInkSplash, setReverseInkSplash] = useState({ active: false, x: 0, y: 0 });
   const [showContent, setShowContent] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const searchFormRef = useRef<FlightSearchFormHandle>(null);
   const [showPNRModal, setShowPNRModal] = useState(false);
   const [showVJTicketModal, setShowVJTicketModal] = useState(false);
   const [showVNATicketModal, setShowVNATicketModal] = useState(false);
@@ -745,7 +746,7 @@ export default function Index() {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/20"></div>
             <div className="container mx-auto px-4 h-full flex items-start sm:items-center justify-center relative z-10 pt-24 sm:pt-0 pb-6">
               <div className="w-full max-w-5xl">
-                <FlightSearchForm onSearch={handleSearch} loading={loading} />
+                <FlightSearchForm ref={searchFormRef} onSearch={handleSearch} loading={loading} />
               </div>
             </div>
           </div>
@@ -914,7 +915,20 @@ export default function Index() {
                       Vietnam Airlines ({vnaFlights.length} chuyến bay)
                     </h3>
                     <div className="space-y-4">
-                      {vnaFlights.map(flight => <FlightCard key={flight.id} flight={flight} priceMode="Page" onHoldTicket={profile?.perm_hold_ticket === true ? handleHoldTicket : undefined} />)}
+                      {vnaFlights.map(flight => (
+                        <FlightCard
+                          key={flight.id}
+                          flight={flight}
+                          priceMode="Page"
+                          onHoldTicket={profile?.perm_hold_ticket === true ? handleHoldTicket : undefined}
+                          showStuCheck={
+                            !!lastSearchData &&
+                            lastSearchData.ptcCode !== 'STU' &&
+                            isKoreanDeparture(lastSearchData.from)
+                          }
+                          onCheckStu={() => searchFormRef.current?.searchWithPtc('STU')}
+                        />
+                      ))}
                     </div>
                   </div>}
               </div>
