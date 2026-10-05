@@ -24,6 +24,15 @@ interface FlightSearchFormProps {
   loading: boolean;
 }
 
+export interface FlightSearchFormHandle {
+  /** Set passenger type (ptcCode) on the form state and re-run the current search with it */
+  searchWithPtc: (ptc: 'VFR' | 'ADT' | 'STU') => void;
+}
+
+/** Check if an airport code belongs to Korea */
+export const isKoreanDeparture = (code: string) =>
+  koreanAirports.some((a) => a.code === code);
+
 // Korean airports
 const koreanAirports = [
   { code: 'ICN', name: 'Incheon', city: 'Seoul' },
@@ -56,7 +65,7 @@ const vietnameseAirports = [
   { code: 'VDO', name: 'Vân Đồn (Quảng Ninh)', city: 'Vân Đồn' },
 ];
 
-export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, loading }) => {
+export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFormProps>(({ onSearch, loading }, ref) => {
   const today = startOfDay(new Date());
 
   const [formData, setFormData] = useState<SearchFormData>({
@@ -78,6 +87,16 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, lo
     e.preventDefault();
     onSearch(formData);
   };
+
+  // Expose imperative API: update ptcCode in form state AND search with it
+  // synchronously (avoids React async state reading the old value).
+  React.useImperativeHandle(ref, () => ({
+    searchWithPtc: (ptc) => {
+      const next = { ...formData, ptcCode: ptc };
+      setFormData(next);
+      onSearch(next);
+    },
+  }));
 
   const handleDepartureDateSelect = (date: Date | undefined) => {
     setFormData(prev => ({ ...prev, departureDate: date }));
@@ -364,4 +383,6 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, lo
       </form>
     </div>
   );
-};
+});
+
+FlightSearchForm.displayName = 'FlightSearchForm';
