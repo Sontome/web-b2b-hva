@@ -30,6 +30,8 @@ interface PassengerInfo {
 interface VNABookingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Passenger type used at search/check time — shown read-only, sent as-is */
+  ptcCode: 'VFR' | 'ADT' | 'STU';
   flightInfo: {
     dep: string;
     arr: string;
@@ -46,6 +48,7 @@ interface VNABookingModalProps {
 export const VNABookingModal = ({
   isOpen,
   onClose,
+  ptcCode,
   flightInfo,
   maxSeats,
   onBookingSuccess
@@ -58,7 +61,9 @@ export const VNABookingModal = ({
       type: 'người_lớn'
     }
   ]);
-  const [doiTuong, setDoiTuong] = useState<'VFR' | 'ADT' | 'STU'>('VFR');
+  // Passenger type is taken directly from the search that produced this flight —
+  // not user-selectable and never hard-coded to VFR.
+  const doiTuong = ptcCode || 'ADT';
   const [isLoading, setIsLoading] = useState(false);
   const [successData, setSuccessData] = useState<{ pnr: string } | null>(null);
   const [ticketEmail, setTicketEmail] = useState("");
@@ -387,8 +392,8 @@ export const VNABookingModal = ({
 
           <div className="space-y-6">
             <div>
-              <Label>Đối tượng</Label>
-              <Select value={doiTuong} onValueChange={(v: 'VFR' | 'ADT' | 'STU') => setDoiTuong(v)}>
+              <Label>Đối tượng (theo kết quả tìm kiếm)</Label>
+              <Select value={doiTuong} disabled>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
