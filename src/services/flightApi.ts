@@ -162,6 +162,8 @@ export interface Flight {
   new_flight_arr_no?: string;
   ticketClass: string;
   baggageType: string;
+  /** Passenger type (ptc_code) used by the search that produced this flight */
+  ptcCode?: 'VFR' | 'ADT' | 'STU';
   stopInfo?: {
     stop1: string;
     waitTime: string;
@@ -601,5 +603,7 @@ export const fetchVNAFlightsV4 = async (searchData: SearchFormData): Promise<Fli
   if (!response.ok) throw new Error(`Vietnam Airlines v4 API error: ${response.status}`);
   const data: VNAFlightResponse = await response.json();
   if (data.status_code !== 200 || !data.body) return [];
-  return parseVNAData(data).vnaFlights;
+  // Stamp every flight with the ptc_code used by this search so downstream
+  // flows (hold ticket) reuse the exact same type without user re-selection.
+  return parseVNAData(data).vnaFlights.map((f) => ({ ...f, ptcCode: ptc }));
 };
