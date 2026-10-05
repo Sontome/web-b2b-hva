@@ -21,13 +21,20 @@ interface Props {
 export const MIN_LEGS = 2;
 export const MAX_LEGS = 4;
 
-/** Allowed destinations: last leg of a 3+ leg trip → Korea; everything else → Vietnam. */
+/**
+ * Allowed destinations: intermediate legs → Vietnam only. The last leg of a
+ * 2-leg trip can end in Vietnam or Korea (both allowed); from 3 legs on, the
+ * trip must end in Korea.
+ */
 export const destinationOptionsFor = (
   i: number,
   total: number,
   kr: AirportOption[],
   vn: AirportOption[],
-) => (i === total - 1 && total >= 3 ? kr : vn);
+) => {
+  if (i < total - 1) return vn;
+  return total === 2 ? [...vn, ...kr] : kr;
+};
 
 /** Clear destinations that are not allowed for their position and dates that break ordering. Never auto-fills values. */
 export const normalizeLegs = (
