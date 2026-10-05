@@ -6,7 +6,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { CheckSTUVNAModal } from '@/components/CheckSTUVNAModal';
 import { ChangeTicketModal } from '@/components/change-ticket/ChangeTicketModal';
 import type { Flight } from '@/services/flightApi';
 
@@ -14,7 +13,10 @@ interface Props {
   flight: Flight;
   currentPrice: number;
   passengerCount?: number;
-  onApplyStuPrice?: (newPrice: number) => void;
+  /** Only show the STU button when the current search is not STU and departs from Korea */
+  showStuCheck?: boolean;
+  /** Re-run the current search with type = STU */
+  onCheckStu?: () => void;
 }
 
 /** Map Flight (EN shape) -> VNA leg shape required by the modals */
@@ -41,8 +43,7 @@ function buildModalFlight(flight: Flight) {
 }
 
 export const VNAFlightActions: React.FC<Props> = React.memo(
-  ({ flight, currentPrice, passengerCount = 1, onApplyStuPrice }) => {
-    const [stuOpen, setStuOpen] = useState(false);
+  ({ flight, showStuCheck, onCheckStu }) => {
     const [changeOpen, setChangeOpen] = useState(false);
 
     const modalFlight = useMemo(() => buildModalFlight(flight), [flight]);
@@ -53,22 +54,24 @@ export const VNAFlightActions: React.FC<Props> = React.memo(
       <>
         <TooltipProvider delayDuration={150}>
           <div className="flex items-center gap-1" onClick={stopPropagation}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Check giá STU"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setStuOpen(true);
-                  }}
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-md bg-white/80 hover:bg-indigo-50 dark:bg-gray-800/80 dark:hover:bg-gray-700 transition-colors shadow-sm"
-                >
-                  <GraduationCap className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Check giá STU</TooltipContent>
-            </Tooltip>
+            {showStuCheck && onCheckStu && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Check giá STU"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCheckStu();
+                    }}
+                    className="h-9 w-9 inline-flex items-center justify-center rounded-md bg-white/80 hover:bg-indigo-50 dark:bg-gray-800/80 dark:hover:bg-gray-700 transition-colors shadow-sm"
+                  >
+                    <GraduationCap className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Check giá STU</TooltipContent>
+              </Tooltip>
+            )}
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -88,18 +91,6 @@ export const VNAFlightActions: React.FC<Props> = React.memo(
             </Tooltip>
           </div>
         </TooltipProvider>
-
-        {stuOpen && (
-          <CheckSTUVNAModal
-            isOpen={stuOpen}
-            onClose={() => setStuOpen(false)}
-            flight={modalFlight}
-            passengerCount={passengerCount}
-            currentPrice={currentPrice}
-            isRoundTrip={!!flight.return}
-            onApply={(p) => onApplyStuPrice?.(p)}
-          />
-        )}
 
         {changeOpen && (
           <ChangeTicketModal
