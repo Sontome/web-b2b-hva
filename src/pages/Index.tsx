@@ -4,6 +4,8 @@ import { FlightSearchForm, SearchFormData, isKoreanDeparture, type FlightSearchF
 import { FlightCard } from '@/components/FlightCard';
 import { FlightFilters, FilterOptions } from '@/components/FlightFilters';
 import { fetchVietJetFlights, fetchVietnamAirlinesFlights, fetchVNAFlightsV4, Flight, OtherAirlineFlight } from '@/services/flightApi';
+import { fetchVNAMultiCity, type MultiCityFlight, type MultiCitySearchData } from '@/services/vnaMultiCityApi';
+import { VnaMultiCityCard } from '@/components/VnaMultiCityCard';
 import { searchLowFare, LowFareDay } from '../services/lowfareService';
 import { Button } from '@/components/ui/button';
 import { UserProfileDropdown } from '@/components/UserProfileDropdown';
@@ -73,6 +75,9 @@ export default function Index() {
   const [lowFareReturn, setLowFareReturn] = useState<LowFareDay[]>([]);
   const [isLoadingLowFare, setIsLoadingLowFare] = useState(false);
   const [lastSearchData, setLastSearchData] = useState<SearchFormData | null>(null);
+  const [mdMode, setMdMode] = useState(false);
+  const [mdFlights, setMdFlights] = useState<MultiCityFlight[]>([]);
+  const [mdSearch, setMdSearch] = useState<MultiCitySearchData | null>(null);
   const [sunpqOpen, setSunpqOpen] = useState(false);
   const [sunpqFlights, setSunpqFlights] = useState<SunPQTrip[]>([]);
   const [sunpqLoading, setSunpqLoading] = useState(false);
@@ -248,7 +253,40 @@ export default function Index() {
 
 
 
+  // Multi-city: VNA only, separate from the normal multi-airline flow
+  const handleMultiSearch = async (data: MultiCitySearchData) => {
+    if (profile?.perm_check_vna !== true) {
+      setError('Tính năng tìm kiếm chuyến bay VNA đã bị khóa.');
+      toast({ title: 'Thông báo', description: 'Bạn chưa được cấp quyền kiểm tra vé VNA', variant: 'destructive' });
+      return;
+    }
+    setMdMode(true);
+    setMdSearch(data);
+    setMdFlights([]);
+    setFlights([]);
+    setOtherFlights([]);
+    setRawOtherFlights([]);
+    setSunpqFlights([]);
+    setPremiaFlights([]);
+    setSearchPerformed(false);
+    setHasSearched(false);
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetchVNAMultiCity(data);
+      setMdFlights(res);
+      if (res.length > 0) setTimeout(() => playNotificationSound(), 200);
+    } catch (err: any) {
+      console.error('VNA multi-city error:', err);
+      setError(err.message || 'Đã xảy ra lỗi khi tìm kiếm chuyến bay.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSearch = async (searchData: SearchFormData) => {
+    setMdMode(false);
+    setMdFlights([]);
     console.log('=== FLIGHT SEARCH DEBUG ===');
     console.log('Profile:', profile);
     console.log('perm_check_vj:', profile?.perm_check_vj);
@@ -746,7 +784,7 @@ export default function Index() {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/20"></div>
             <div className="container mx-auto px-4 h-full flex items-start sm:items-center justify-center relative z-10 pt-24 sm:pt-0 pb-6">
               <div className="w-full max-w-5xl">
-                <FlightSearchForm ref={searchFormRef} onSearch={handleSearch} loading={loading} />
+                <FlightSearchForm ref={searchFormRef} onSearch={handleSearch} onMultiSearch={handleMultiSearch} loading={loading} />
               </div>
             </div>
           </div>
@@ -891,6 +929,29 @@ export default function Index() {
                   )}
                 </div>
               ))}
+          </div>
+        )}
+
+        {mdMode && mdFlights.length > 0 && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg animate-fade-in max-w-3xl mx-auto">
+            <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-3">
+              Vietnam Airlines - Nhiều chặng ({mdFlights.length} kết quả)
+            </h3>
+            <div className="space-y-4">
+              {mdFlights.map(f => (
+                <VnaMultiCityCard
+                  key={f.id}
+                  flight={f}
+                  showStuCheck={!!mdSearch && mdSearch.ptcCode !== 'STU'}
+                  onCheckStu={() => searchFormRef.current?.searchWithPtc('STU')}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {mdMode && !loading && mdFlights.length === 0 && !error && (
+          <div className="text-center py-12 animate-fade-in">
+            <p className="text-gray-500 dark:text-gray-400">Không tìm thấy chuyến bay nào phù hợp với yêu cầu của bạn.</p>
           </div>
         )}
 
