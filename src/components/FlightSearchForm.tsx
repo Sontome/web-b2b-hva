@@ -43,8 +43,6 @@ const validateMultiCity = (legs: MultiCityLegInput[]): string | null => {
     if (!l.origin) return `Chặng ${i + 1}: thiếu nơi đi.`;
     if (!l.destination) return `Chặng ${i + 1}: thiếu nơi đến.`;
     if (!l.date) return `Chặng ${i + 1}: thiếu ngày đi.`;
-    if (i > 0 && l.origin !== legs[i - 1].destination)
-      return `Chặng ${i + 1} phải khởi hành từ nơi đến của chặng ${i}.`;
     if (i > 0 && startOfDay(l.date) < startOfDay(legs[i - 1].date as Date))
       return `Ngày chặng ${i + 1} không được trước ngày chặng ${i}.`;
   }
