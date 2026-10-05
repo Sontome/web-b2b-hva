@@ -8,6 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Plane, RefreshCw } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { MultiCityLegsEditor, MIN_LEGS, MAX_LEGS, normalizeLegs } from '@/components/MultiCityLegsEditor';
+import type { MultiCityLegInput, MultiCitySearchData } from '@/services/vnaMultiCityApi';
 
 export interface SearchFormData {
   from: string;
@@ -21,6 +23,8 @@ export interface SearchFormData {
 
 interface FlightSearchFormProps {
   onSearch: (data: SearchFormData) => void;
+  /** Multi-city (VNA only) search */
+  onMultiSearch?: (data: MultiCitySearchData) => void;
   loading: boolean;
 }
 
@@ -28,6 +32,28 @@ export interface FlightSearchFormHandle {
   /** Set passenger type (ptcCode) on the form state and re-run the current search with it */
   searchWithPtc: (ptc: 'VFR' | 'ADT' | 'STU') => void;
 }
+
+const validateMultiCity = (legs: MultiCityLegInput[]): string | null => {
+  if (legs.length < MIN_LEGS) return 'Hành trình nhiều chặng cần tối thiểu 2 chặng.';
+  if (legs.length > MAX_LEGS) return 'Hành trình nhiều chặng tối đa 4 chặng.';
+  const isKR = (c: string) => koreanAirports.some((a) => a.code === c);
+  const isVN = (c: string) => vietnameseAirports.some((a) => a.code === c);
+  for (let i = 0; i < legs.length; i++) {
+    const l = legs[i];
+    if (!l.origin) return `Chặng ${i + 1}: thiếu nơi đi.`;
+    if (!l.destination) return `Chặng ${i + 1}: thiếu nơi đến.`;
+    if (!l.date) return `Chặng ${i + 1}: thiếu ngày đi.`;
+    if (i > 0 && l.origin !== legs[i - 1].destination)
+      return `Chặng ${i + 1} phải khởi hành từ nơi đến của chặng ${i}.`;
+    if (i > 0 && startOfDay(l.date) < startOfDay(legs[i - 1].date as Date))
+      return `Ngày chặng ${i + 1} không được trước ngày chặng ${i}.`;
+  }
+  if (!isKR(legs[0].origin)) return 'Chặng 1 phải khởi hành từ Hàn Quốc (ICN/PUS).';
+  const last = legs[legs.length - 1].destination;
+  if (legs.length === 2 && !isVN(last)) return 'Hành trình 2 chặng phải kết thúc tại Việt Nam.';
+  if (legs.length >= 3 && !isKR(last)) return 'Hành trình từ 3 chặng phải kết thúc tại Hàn Quốc.';
+  return null;
+};
 
 /** Check if an airport code belongs to Korea */
 export const isKoreanDeparture = (code: string) =>
@@ -65,7 +91,7 @@ const vietnameseAirports = [
   { code: 'VDO', name: 'Vân Đồn (Quảng Ninh)', city: 'Vân Đồn' },
 ];
 
-export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFormProps>(({ onSearch, loading }, ref) => {
+export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFormProps>(({ onSearch, onMultiSearch, loading }, ref) => {
   const today = startOfDay(new Date());
 
   const [formData, setFormData] = useState<SearchFormData>({
@@ -83,8 +109,36 @@ export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightS
   const [departureDateMonth, setDepartureDateMonth] = useState<Date | undefined>(undefined);
   const [returnDateMonth, setReturnDateMonth] = useState<Date | undefined>(undefined);
 
+  // Multi-city (VNA only) — independent from normal one-way/round-trip state
+  const [isMulti, setIsMulti] = useState(false);
+  const [multiError, setMultiError] = useState<string | null>(null);
+  const [legs, setLegs] = useState<MultiCityLegInput[]>(() =>
+    normalizeLegs(
+      [
+        { origin: 'ICN', destination: 'HAN', date: undefined },
+        { origin: 'HAN', destination: 'SGN', date: undefined },
+        { origin: 'SGN', destination: 'ICN', date: undefined },
+      ],
+      koreanAirports,
+      vietnameseAirports,
+    ),
+  );
+
+  const multiPtc = (formData.ptcCode || 'VFR') as 'VFR' | 'ADT' | 'STU';
+
+  const runMultiSearch = (ptc: 'VFR' | 'ADT' | 'STU') => {
+    const err = validateMultiCity(legs);
+    setMultiError(err);
+    if (err || !onMultiSearch) return;
+    onMultiSearch({ legs, passengers: formData.passengers, ptcCode: ptc });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isMulti) {
+      runMultiSearch(multiPtc);
+      return;
+    }
     onSearch(formData);
   };
 
@@ -94,6 +148,10 @@ export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightS
     searchWithPtc: (ptc) => {
       const next = { ...formData, ptcCode: ptc };
       setFormData(next);
+      if (isMulti) {
+        runMultiSearch(ptc);
+        return;
+      }
       onSearch(next);
     },
   }));
@@ -118,6 +176,8 @@ export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightS
 
   // Check if departure airport is Korean
   const isFromKorean = koreanAirports.some(airport => airport.code === formData.from);
+  // Multi-city always departs from Korea → all types allowed
+  const typeKorean = isMulti || isFromKorean;
   
   // Get available destination airports based on departure selection
   const getAvailableDestinations = () => {
@@ -188,8 +248,8 @@ export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightS
               type="radio"
               name="tripType"
               value="round_trip"
-              checked={formData.tripType === 'round_trip'}
-              onChange={(e) => setFormData(prev => ({ ...prev, tripType: e.target.value as 'round_trip' }))}
+              checked={!isMulti && formData.tripType === 'round_trip'}
+              onChange={(e) => { setIsMulti(false); setMultiError(null); setFormData(prev => ({ ...prev, tripType: e.target.value as 'round_trip' })); }}
               className="text-blue-600 w-4 h-4 shrink-0"
             />
             <span className="text-gray-700 text-sm font-medium group-hover:text-blue-600 transition-colors whitespace-nowrap">Khứ hồi</span>
@@ -199,11 +259,22 @@ export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightS
               type="radio"
               name="tripType"
               value="one_way"
-              checked={formData.tripType === 'one_way'}
-              onChange={(e) => setFormData(prev => ({ ...prev, tripType: e.target.value as 'one_way' }))}
+              checked={!isMulti && formData.tripType === 'one_way'}
+              onChange={(e) => { setIsMulti(false); setMultiError(null); setFormData(prev => ({ ...prev, tripType: e.target.value as 'one_way' })); }}
               className="text-blue-600 w-4 h-4 shrink-0"
             />
             <span className="text-gray-700 text-sm font-medium group-hover:text-blue-600 transition-colors whitespace-nowrap">Một chiều</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer group min-w-fit">
+            <input
+              type="radio"
+              name="tripType"
+              value="multi_city"
+              checked={isMulti}
+              onChange={() => setIsMulti(true)}
+              className="text-blue-600 w-4 h-4 shrink-0"
+            />
+            <span className="text-gray-700 text-sm font-medium group-hover:text-blue-600 transition-colors whitespace-nowrap">Nhiều chặng</span>
           </label>
         </div>
 
@@ -212,15 +283,15 @@ export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightS
           <div className="space-y-1.5">
             <Label className="text-xs text-gray-600 font-medium">Type</Label>
             <Select
-              value={isFromKorean ? (formData.ptcCode || 'VFR') : 'ADT'}
+              value={typeKorean ? (formData.ptcCode || 'VFR') : 'ADT'}
               onValueChange={(v) => setFormData(prev => ({ ...prev, ptcCode: v as 'VFR' | 'ADT' | 'STU' }))}
-              disabled={!isFromKorean}
+              disabled={!typeKorean}
             >
               <SelectTrigger className="h-10 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(isFromKorean ? ['VFR', 'ADT', 'STU'] : ['ADT']).map(t => (
+                {(typeKorean ? ['VFR', 'ADT', 'STU'] : ['ADT']).map(t => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
@@ -228,6 +299,7 @@ export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightS
           </div>
         </div>
 
+        {!isMulti && (<>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* From Airport */}
           <div className="space-y-1.5">
@@ -371,6 +443,34 @@ export const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightS
             </div>
           </div>
         )}
+        </>)}
+
+        {isMulti && (
+          <div className="space-y-4">
+            <MultiCityLegsEditor
+              legs={legs}
+              onChange={(next) => { setLegs(next); setMultiError(null); }}
+              koreanAirports={koreanAirports}
+              vietnameseAirports={vietnameseAirports}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="passengers-md" className="text-xs text-gray-600 font-medium">Số hành khách</Label>
+                <Input
+                  id="passengers-md"
+                  type="number"
+                  min="1"
+                  max="9"
+                  value={formData.passengers}
+                  onChange={(e) => setFormData(prev => ({ ...prev, passengers: parseInt(e.target.value) || 1 }))}
+                  className="h-10 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            {multiError && <p className="text-sm text-destructive font-medium">{multiError}</p>}
+          </div>
+        )}
+
 
         <Button 
           type="submit" 
