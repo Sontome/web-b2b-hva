@@ -122,33 +122,33 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
     
     try {
       const requestBody = {
-        khachHang: [
-          {
-            pnrs: pnrs,
-            email: formData.email,
-            tenKhach: formData.tenKhach,
-            xungHo: formData.xungHo,
-            sdt: formData.sdt,
-            guiChung: formData.guiChung,
-            banner:formData.banner
-          }
-        ]
+        email: formData.email,
+        customer_name: formData.tenKhach,
+        salutation: formData.xungHo,
+        pnrs: pnrs,
+        banner: formData.banner,
+        type: 0,
+        phone: formData.sdt,
+        attachments: []
       };
 
-      const response = await fetch('https://apilive.hanvietair.com/proxy-gas', {
+      const response = await fetch('https://apilive.hanvietair.com/mail/queue/create', {
         method: 'POST',
         headers: {
+          'accept': '*/*',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody)
       });
-      
+
       const result = await response.json();
-      
-      
-      
-      
-      if (result?.status === 'success') {
+
+      // Response thành công: {"success": true, "created": true, "message": "...", "data": {...}}
+      // hoặc server trả lại đúng payload đã tạo (email + pnrs)
+      const isSuccess =
+        (result && (result.success === true || result.created === true)) ||
+        (response.ok && result && (result.email || Array.isArray(result.pnrs)));
+      if (isSuccess) {
         // Save banner to user profile for future use
         if (user && formData.banner) {
           await supabase
@@ -157,7 +157,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
             .eq('id', user.id);
           patchProfile({ banner: formData.banner });
         }
-        
+
         toast.success('Đã thêm hàng chờ gửi mail thành công', {
           duration: 5000,
           style: {
