@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -343,16 +343,162 @@ export type Database = {
         }
         Relationships: []
       }
+      mail_event_webhook_config: {
+        Row: {
+          enabled: boolean
+          endpoint: string
+          singleton: boolean
+          vault_secret_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          endpoint: string
+          singleton?: boolean
+          vault_secret_id: string
+        }
+        Update: {
+          enabled?: boolean
+          endpoint?: string
+          singleton?: boolean
+          vault_secret_id?: string
+        }
+        Relationships: []
+      }
+      mail_pnr_events: {
+        Row: {
+          attempts: number
+          changed_at: string
+          claim_token: string | null
+          claimed_at: string | null
+          claimed_generation: number | null
+          due_at: string
+          generation: number
+          last_error: string | null
+          pnr: string
+          retry_required: boolean
+          state: string
+        }
+        Insert: {
+          attempts?: number
+          changed_at?: string
+          claim_token?: string | null
+          claimed_at?: string | null
+          claimed_generation?: number | null
+          due_at: string
+          generation?: number
+          last_error?: string | null
+          pnr: string
+          retry_required?: boolean
+          state?: string
+        }
+        Update: {
+          attempts?: number
+          changed_at?: string
+          claim_token?: string | null
+          claimed_at?: string | null
+          claimed_generation?: number | null
+          due_at?: string
+          generation?: number
+          last_error?: string | null
+          pnr?: string
+          retry_required?: boolean
+          state?: string
+        }
+        Relationships: []
+      }
       mail_queue: {
         Row: {
+          airline: string | null
+          attachments: Json
           banner: string | null
           created_at: string | null
           customer_name: string | null
           email: string
+          from_email: string | null
           id: string
           last_error: string | null
+          locked_until: string | null
           missing_pnrs: Json | null
           next_retry_at: string | null
+          phone: string | null
+          pnrs: Json
+          ready_after: string | null
+          retry_count: number | null
+          salutation: string | null
+          sent_at: string | null
+          smtp_started_at: string | null
+          status: string
+          type: number | null
+          updated_at: string | null
+          worker_token: string | null
+        }
+        Insert: {
+          airline?: string | null
+          attachments?: Json
+          banner?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          email: string
+          from_email?: string | null
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          missing_pnrs?: Json | null
+          next_retry_at?: string | null
+          phone?: string | null
+          pnrs: Json
+          ready_after?: string | null
+          retry_count?: number | null
+          salutation?: string | null
+          sent_at?: string | null
+          smtp_started_at?: string | null
+          status?: string
+          type?: number | null
+          updated_at?: string | null
+          worker_token?: string | null
+        }
+        Update: {
+          airline?: string | null
+          attachments?: Json
+          banner?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          email?: string
+          from_email?: string | null
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          missing_pnrs?: Json | null
+          next_retry_at?: string | null
+          phone?: string | null
+          pnrs?: Json
+          ready_after?: string | null
+          retry_count?: number | null
+          salutation?: string | null
+          sent_at?: string | null
+          smtp_started_at?: string | null
+          status?: string
+          type?: number | null
+          updated_at?: string | null
+          worker_token?: string | null
+        }
+        Relationships: []
+      }
+      mail_queue_log: {
+        Row: {
+          airline: string | null
+          archived_at: string
+          attachments: Json | null
+          banner: string | null
+          created_at: string | null
+          customer_name: string | null
+          email: string
+          final_reason: string | null
+          from_email: string | null
+          id: string
+          last_error: string | null
+          message_id: string | null
+          missing_pnrs: Json | null
           phone: string | null
           pnrs: Json
           retry_count: number | null
@@ -363,32 +509,42 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          airline?: string | null
+          archived_at?: string
+          attachments?: Json | null
           banner?: string | null
           created_at?: string | null
           customer_name?: string | null
           email: string
-          id?: string
+          final_reason?: string | null
+          from_email?: string | null
+          id: string
           last_error?: string | null
+          message_id?: string | null
           missing_pnrs?: Json | null
-          next_retry_at?: string | null
           phone?: string | null
           pnrs: Json
           retry_count?: number | null
           salutation?: string | null
           sent_at?: string | null
-          status?: string
+          status: string
           type?: number | null
           updated_at?: string | null
         }
         Update: {
+          airline?: string | null
+          archived_at?: string
+          attachments?: Json | null
           banner?: string | null
           created_at?: string | null
           customer_name?: string | null
           email?: string
+          final_reason?: string | null
+          from_email?: string | null
           id?: string
           last_error?: string | null
+          message_id?: string | null
           missing_pnrs?: Json | null
-          next_retry_at?: string | null
           phone?: string | null
           pnrs?: Json
           retry_count?: number | null
@@ -397,6 +553,27 @@ export type Database = {
           status?: string
           type?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      mail_send_webhook_config: {
+        Row: {
+          enabled: boolean
+          endpoint: string
+          singleton: boolean
+          vault_secret_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          endpoint: string
+          singleton?: boolean
+          vault_secret_id: string
+        }
+        Update: {
+          enabled?: boolean
+          endpoint?: string
+          singleton?: boolean
+          vault_secret_id?: string
         }
         Relationships: []
       }
@@ -513,10 +690,12 @@ export type Database = {
           first_sent_at: string | null
           id: number
           last_sent_at: string | null
+          mail_queue_id: string | null
           mail_type: string
           phone: string | null
           pnr: string
           salutation: string | null
+          send_attempt_id: string | null
           send_count: number | null
           time1: string | null
           time2: string | null
@@ -537,10 +716,12 @@ export type Database = {
           first_sent_at?: string | null
           id?: number
           last_sent_at?: string | null
+          mail_queue_id?: string | null
           mail_type?: string
           phone?: string | null
           pnr: string
           salutation?: string | null
+          send_attempt_id?: string | null
           send_count?: number | null
           time1?: string | null
           time2?: string | null
@@ -561,10 +742,12 @@ export type Database = {
           first_sent_at?: string | null
           id?: number
           last_sent_at?: string | null
+          mail_queue_id?: string | null
           mail_type?: string
           phone?: string | null
           pnr?: string
           salutation?: string | null
+          send_attempt_id?: string | null
           send_count?: number | null
           time1?: string | null
           time2?: string | null
@@ -1198,6 +1381,173 @@ export type Database = {
         }
         Returns: boolean
       }
+      mail_archive: {
+        Args: {
+          p_error?: string
+          p_id: string
+          p_message_id?: string
+          p_reason?: string
+          p_status: string
+          p_token: string
+        }
+        Returns: boolean
+      }
+      mail_claim: {
+        Args: { p_lease_seconds?: number; p_limit?: number }
+        Returns: {
+          airline: string | null
+          attachments: Json
+          banner: string | null
+          created_at: string | null
+          customer_name: string | null
+          email: string
+          from_email: string | null
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          missing_pnrs: Json | null
+          next_retry_at: string | null
+          phone: string | null
+          pnrs: Json
+          ready_after: string | null
+          retry_count: number | null
+          salutation: string | null
+          sent_at: string | null
+          smtp_started_at: string | null
+          status: string
+          type: number | null
+          updated_at: string | null
+          worker_token: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mail_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      mail_enqueue_sync: { Args: { p_id: string }; Returns: undefined }
+      mail_event_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          claim_token: string
+          generation: number
+          pnr: string
+        }[]
+      }
+      mail_event_fail: {
+        Args: { p_error: string; p_pnr: string; p_token: string }
+        Returns: boolean
+      }
+      mail_event_finish: {
+        Args: { p_pnr: string; p_token: string }
+        Returns: string
+      }
+      mail_event_recover: {
+        Args: { p_timeout_seconds?: number }
+        Returns: number
+      }
+      mail_event_sync: {
+        Args: { p_pnr: string; p_token: string }
+        Returns: boolean
+      }
+      mail_expire_leases: { Args: never; Returns: number }
+      mail_mark_smtp_started: {
+        Args: { p_id: string; p_token: string }
+        Returns: boolean
+      }
+      mail_retry: {
+        Args: {
+          p_error: string
+          p_id: string
+          p_max_retries?: number
+          p_token: string
+          p_uncertain?: boolean
+        }
+        Returns: boolean
+      }
+      mail_sync_events: {
+        Args: { p_limit?: number; p_quiet_seconds?: number }
+        Returns: number
+      }
+      mq_archive_sent: {
+        Args: { p_queue_id: string; p_token: string }
+        Returns: boolean
+      }
+      mq_claim_due_pnrs: {
+        Args: { p_pnrs: string[] }
+        Returns: {
+          claim_token: string
+          generation: number
+          pnr: string
+        }[]
+      }
+      mq_claim_send: {
+        Args: { p_lease_seconds?: number; p_queue_id: string }
+        Returns: {
+          claim_token: string
+          queue_id: string
+        }[]
+      }
+      mq_create_queue: {
+        Args: {
+          p_attachments?: Json
+          p_banner?: string
+          p_customer_name?: string
+          p_email: string
+          p_from_email?: string
+          p_phone?: string
+          p_pnrs: Json
+          p_salutation?: string
+          p_type?: number
+        }
+        Returns: {
+          created: boolean
+          queue_airline: string
+          queue_from_email: string
+          queue_id: string
+          queue_missing_pnrs: Json
+          queue_pnrs: Json
+          queue_status: string
+        }[]
+      }
+      mq_extend_send_lease: {
+        Args: { p_lease_seconds?: number; p_queue_id: string; p_token: string }
+        Returns: boolean
+      }
+      mq_finish_send: {
+        Args: { p_queue_id: string; p_token: string }
+        Returns: number
+      }
+      mq_mark_smtp_started: {
+        Args: { p_queue_id: string; p_token: string }
+        Returns: boolean
+      }
+      mq_pending_events: {
+        Args: never
+        Returns: {
+          due_at: string
+          pnr: string
+        }[]
+      }
+      mq_pnrs_key: { Args: { p_pnrs: Json }; Returns: string }
+      mq_recover_send_queues: {
+        Args: { p_limit?: number }
+        Returns: {
+          queue_id: string
+          queue_status: string
+        }[]
+      }
+      mq_sender_failure: {
+        Args: {
+          p_error: string
+          p_queue_id: string
+          p_smtp_started: boolean
+          p_token: string
+        }
+        Returns: boolean
+      }
+      mq_sync_claimed_batch: { Args: { p_claims: Json }; Returns: number }
       sync_kakanoti_phone_sent: { Args: never; Returns: undefined }
       update_kakanoti_row_sent: { Args: never; Returns: number }
     }
