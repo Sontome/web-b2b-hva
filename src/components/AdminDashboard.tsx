@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Settings, DollarSign, Mail, User, LogOut, Phone, Facebook, Ticket, Clock, Check, AlertTriangle, Globe } from 'lucide-react';
+import { Users, Settings, DollarSign, Mail, User, LogOut, Phone, Facebook, Ticket, Clock, Check, AlertTriangle, Globe, MailCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -615,6 +615,22 @@ export const AdminDashboard = () => {
               <div className="text-2xl font-bold">Quản lý</div>
               <p className="text-xs text-muted-foreground">
                 Xử lý email inbound (PNR, hãng bay)
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate('/admin/mail-center')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Quản lý Mail Gửi</CardTitle>
+              <MailCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Quản lý</div>
+              <p className="text-xs text-muted-foreground">
+                Hàng chờ gửi và lịch sử email vé điện tử
               </p>
             </CardContent>
           </Card>
