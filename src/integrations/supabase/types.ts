@@ -1392,6 +1392,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      mail_center_detail: { Args: { p_id: string }; Returns: Json }
+      mail_center_list: {
+        Args: {
+          p_airline?: string
+          p_date_from?: string
+          p_date_to?: string
+          p_from_email?: string
+          p_has_error?: boolean
+          p_has_missing?: boolean
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_status?: string
+          p_tab?: string
+        }
+        Returns: Json
+      }
+      mail_center_stats: { Args: never; Returns: Json }
       mail_claim: {
         Args: { p_lease_seconds?: number; p_limit?: number }
         Returns: {
