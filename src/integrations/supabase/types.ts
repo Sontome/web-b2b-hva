@@ -688,6 +688,7 @@ export type Database = {
           day4: string | null
           email: string
           first_sent_at: string | null
+          hang: string | null
           id: number
           last_sent_at: string | null
           mail_queue_id: string | null
@@ -714,6 +715,7 @@ export type Database = {
           day4?: string | null
           email: string
           first_sent_at?: string | null
+          hang?: string | null
           id?: number
           last_sent_at?: string | null
           mail_queue_id?: string | null
@@ -740,6 +742,7 @@ export type Database = {
           day4?: string | null
           email?: string
           first_sent_at?: string | null
+          hang?: string | null
           id?: number
           last_sent_at?: string | null
           mail_queue_id?: string | null
@@ -1309,22 +1312,40 @@ export type Database = {
     Functions: {
       cancel_expired_holding_tickets: { Args: never; Returns: undefined }
       clear_sent_phone: { Args: never; Returns: number }
-      customer_flights_list: {
-        Args: {
-          p_customer_name?: string
-          p_email?: string
-          p_fly_from?: string
-          p_fly_to?: string
-          p_page?: number
-          p_page_size?: number
-          p_phone?: string
-          p_pnr?: string
-          p_sent_from?: string
-          p_sent_to?: string
-          p_sort?: string
-        }
-        Returns: Json
-      }
+      customer_flights_list:
+        | {
+            Args: {
+              p_customer_name?: string
+              p_email?: string
+              p_fly_from?: string
+              p_fly_to?: string
+              p_page?: number
+              p_page_size?: number
+              p_phone?: string
+              p_pnr?: string
+              p_sent_from?: string
+              p_sent_to?: string
+              p_sort?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_customer_name?: string
+              p_email?: string
+              p_fly_from?: string
+              p_fly_to?: string
+              p_hang?: string
+              p_page?: number
+              p_page_size?: number
+              p_phone?: string
+              p_pnr?: string
+              p_sent_from?: string
+              p_sent_to?: string
+              p_sort?: string
+            }
+            Returns: Json
+          }
       delete_old_reprice: { Args: never; Returns: undefined }
       get_not_ready_latest_kakanoti_apiapp: {
         Args: never
@@ -1397,6 +1418,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      lookup_ticket_hang: { Args: { p_pnr: string }; Returns: string }
       mail_archive: {
         Args: {
           p_error?: string
