@@ -20,6 +20,7 @@ import InboundEmail from "./pages/InboundEmail";
 import AdminCart from "./pages/AdminCart";
 import TicketRules from "./pages/TicketRules";
 import MailCenter from "./pages/MailCenter";
+import CustomerFlights from "./pages/CustomerFlights";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/admin/mail-center" element={<ProtectedRoute><MailCenter /></ProtectedRoute>} />
+            <Route path="/admin/customer-flights" element={<ProtectedRoute><CustomerFlights /></ProtectedRoute>} />
             <Route path="/cart" element={
               <ProtectedRoute>
                 <HeldTickets />
