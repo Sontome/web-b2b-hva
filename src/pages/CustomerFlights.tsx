@@ -35,12 +35,16 @@ interface FlightRow {
 interface Filters {
   pnr: string; email: string; customerName: string; phone: string;
   sentFrom: string; sentTo: string; flyFrom: string; flyTo: string;
+  hang: string;
 }
 
 const EMPTY_FILTERS: Filters = {
   pnr: '', email: '', customerName: '', phone: '',
   sentFrom: '', sentTo: '', flyFrom: '', flyTo: '',
+  hang: '',
 };
+
+const HANG_OPTIONS = ['VNA', 'VJ', 'PRE', 'SUN'] as const;
 
 const rpc = (fn: string, args?: Record<string, unknown>) =>
   (supabase.rpc as any)(fn, args) as Promise<{ data: any; error: any }>;
@@ -108,6 +112,7 @@ export default function CustomerFlights() {
     p_sent_to: filters.sentTo ? vnDateToIso(filters.sentTo) : null,
     p_fly_from: filters.flyFrom || null,
     p_fly_to: filters.flyTo || null,
+    p_hang: filters.hang || null,
     p_sort: sort,
     p_page: page,
     p_page_size: pageSize,
@@ -132,7 +137,13 @@ export default function CustomerFlights() {
       customerName: inputs.customerName.trim(), phone: inputs.phone.trim(),
       sentFrom: inputs.sentFrom, sentTo: inputs.sentTo,
       flyFrom: inputs.flyFrom, flyTo: inputs.flyTo,
+      hang: inputs.hang,
     });
+  };
+  const setHang = (v: string) => {
+    const hang = v === 'all' ? '' : v;
+    setInputs(i => ({ ...i, hang }));
+    setFilters(f => ({ ...f, hang }));
   };
   const clearFilters = () => { setInputs(EMPTY_FILTERS); setFilters(EMPTY_FILTERS); };
   const refresh = () => qc.invalidateQueries({ queryKey: ['customer-flights', 'list'] });
@@ -222,6 +233,13 @@ export default function CustomerFlights() {
                   <Button variant="ghost" onClick={clearFilters}>
                     <X className="w-4 h-4 mr-1" /> Xóa bộ lọc
                   </Button>
+                  <Select value={filters.hang || 'all'} onValueChange={setHang}>
+                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tất cả hãng</SelectItem>
+                      {HANG_OPTIONS.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <Select value={sort} onValueChange={v => setSort(v as 'desc' | 'asc')}>
                     <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                     <SelectContent>
