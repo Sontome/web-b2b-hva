@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import SunChangeTicketModal from '@/components/change-ticket-sun/SunChangeTicketModal';
 import { Button } from '@/components/ui/button';
-import { Copy, Users, ShoppingCart, Plane } from 'lucide-react';
+import { Copy, Users, ShoppingCart, Plane, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SunPQTrip, SunPQLeg } from '@/types/sunpq';
 import { applyTicketRules, formatNotesLine } from '@/utils/ticketRuleEngine';
@@ -121,6 +123,8 @@ export const SunPQFlightCard: React.FC<SunPQFlightCardProps> = ({
   onBook,
   bookLabel = 'Giữ vé',
 }) => {
+  // Frozen snapshot of this card's trip, taken at click time.
+  const [changeTrip, setChangeTrip] = useState<SunPQTrip | null>(null);
   const baseFinal = calcSunPQFinalPrice(trip, tripType, oneWayFee, roundTripFee);
   const seats = trip.thông_tin_chung?.số_ghế_còn ?? '9';
 
@@ -168,6 +172,25 @@ export const SunPQFlightCard: React.FC<SunPQFlightCardProps> = ({
           <Button size="sm" variant="outline" className="p-2" onClick={handleCopy} title="Copy">
             <Copy className="h-4 w-4" />
           </Button>
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="p-2"
+                  aria-label="Đổi vé SunPQ"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setChangeTrip(structuredClone(trip));
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4 text-orange-600" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Đổi vé SunPQ</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           {onBook && (
             <Button
               size="sm"
@@ -200,6 +223,9 @@ export const SunPQFlightCard: React.FC<SunPQFlightCardProps> = ({
         {baggageLine}, giá vé = {fmtKRW.format(roundedPrice)}w
       </div>
       {notesLine && <div className="text-red-600 font-semibold text-sm mt-1">{notesLine}</div>}
+      {changeTrip && (
+        <SunChangeTicketModal isOpen onClose={() => setChangeTrip(null)} trip={changeTrip} />
+      )}
     </div>
   );
 };
