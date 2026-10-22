@@ -42,7 +42,7 @@ const SegRow: React.FC<{
     <div className="flex items-start gap-2 w-full">
       {onSelect && (
         <span
-          className={`mt-1 h-4 w-4 shrink-0 rounded-full border-2 ${selected ? 'border-orange-500 bg-orange-500' : 'border-gray-300'}`}
+          className={`mt-1 h-4 w-4 shrink-0 rounded-sm border-2 ${selected ? 'border-orange-500 bg-orange-500' : 'border-gray-300'}`}
         />
       )}
       <div className="flex-1 min-w-0 text-sm">
@@ -63,23 +63,25 @@ const SegRow: React.FC<{
   );
   if (!onSelect) return <div className="border rounded-md p-2 bg-white">{content}</div>;
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      aria-pressed={!!selected}
       disabled={disabled}
       onClick={onSelect}
-      className={`w-full text-left border rounded-md p-2 transition-colors disabled:opacity-60 ${
+      className={`h-auto w-full whitespace-normal text-left border rounded-md p-2 transition-colors disabled:opacity-60 ${
         selected ? 'border-orange-500 bg-orange-50' : 'bg-white hover:bg-orange-50/50'
       }`}
     >
       {content}
-    </button>
+    </Button>
   );
 };
 
 const Group: React.FC<{
   title: string;
   segs: SunSeg[];
-  sel: SunSeg | null;
+  sel: SunSeg[];
   onSel: (s: SunSeg) => void;
   disabled: boolean;
 }> = ({ title, segs, sel, onSel, disabled }) =>
@@ -87,7 +89,7 @@ const Group: React.FC<{
     <div className="space-y-1.5">
       <div className="text-xs font-medium text-gray-500">{title}</div>
       {segs.map((s, i) => (
-        <SegRow key={i} seg={s} selected={sel === s} disabled={disabled} onSelect={() => onSel(s)} />
+        <SegRow key={i} seg={s} selected={sel.includes(s)} disabled={disabled} onSelect={() => onSel(s)} />
       ))}
     </div>
   );
@@ -147,7 +149,7 @@ const FEE_LABELS: Record<FeeKey, string> = {
   phi_doi_ve: 'Phí đổi vé',
 };
 
-const ResultView: React.FC<{ result: SunChangeResult; newSeg: SunSeg | null; onClose: () => void }> = ({
+const ResultView: React.FC<{ result: SunChangeResult; newSeg: SunSeg[]; onClose: () => void }> = ({
   result,
   newSeg,
   onClose,
@@ -229,7 +231,7 @@ const ResultView: React.FC<{ result: SunChangeResult; newSeg: SunSeg | null; onC
           <div className="text-xs text-gray-500">Không có dữ liệu hành trình</div>
         ) : (
           result.list_itinerary.map((s, i) => (
-            <SegRow key={i} seg={s} badge={newSeg && sameFlight(s, newSeg) ? 'Chặng vừa đổi' : undefined} />
+            <SegRow key={i} seg={s} badge={newSeg.some((selected) => sameFlight(s, selected)) ? 'Chặng vừa đổi' : undefined} />
           ))
         )}
       </div>
@@ -243,9 +245,9 @@ const ResultView: React.FC<{ result: SunChangeResult; newSeg: SunSeg | null; onC
 };
 
 export const SunChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, trip }) => {
-  const h = useSunChangeTicket();
-  const { reset } = h;
   const newGroups = useMemo(() => newSegmentsFromTrip(trip), [trip]);
+  const h = useSunChangeTicket(newGroups);
+  const { reset } = h;
   const hasNew = newGroups.out.length + newGroups.back.length > 0;
   const allNew = useMemo(() => [...newGroups.out, ...newGroups.back], [newGroups]);
   const locked = h.changing || !!h.result;
@@ -254,10 +256,6 @@ export const SunChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, trip })
   useEffect(() => {
     if (!isOpen) reset();
   }, [isOpen, reset]);
-  // Pre-select when only one new segment exists.
-  useEffect(() => {
-    if (h.checked && !h.newSel && allNew.length === 1) h.setNewSel(allNew[0]);
-  }, [h.checked, h.newSel, allNew, h]);
 
   const newList = (
     <div className="space-y-2">
@@ -266,8 +264,8 @@ export const SunChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, trip })
         <div className="text-xs text-red-600">Thẻ tìm kiếm thiếu dữ liệu hành trình (list_itinerary)</div>
       ) : h.checked ? (
         <>
-          <Group title="Chiều đi" segs={newGroups.out} sel={h.newSel} onSel={h.setNewSel} disabled={locked} />
-          <Group title="Chiều về" segs={newGroups.back} sel={h.newSel} onSel={h.setNewSel} disabled={locked} />
+          <Group title="Chiều đi" segs={newGroups.out} sel={h.newSel} onSel={h.toggleNew} disabled={locked} />
+          <Group title="Chiều về" segs={newGroups.back} sel={h.newSel} onSel={h.toggleNew} disabled={locked} />
         </>
       ) : (
         allNew.map((s, i) => <SegRow key={i} seg={s} />)
@@ -284,7 +282,7 @@ export const SunChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, trip })
           </div>
           <div>
             <h2 className="text-base font-semibold text-gray-900">Đổi vé Sun PhuQuoc Airways</h2>
-            <p className="text-xs text-gray-500">Thay 1 chặng theo PNR</p>
+            <p className="text-xs text-gray-500">Thay 1 hoặc 2 chặng theo PNR</p>
           </div>
         </div>
 
@@ -346,8 +344,8 @@ export const SunChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, trip })
                 )}
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-gray-800">Hành trình hiện tại — chọn chặng cần thay</div>
-                  <Group title="Chiều đi" segs={h.checked.chieudi} sel={h.oldSel} onSel={h.setOldSel} disabled={locked} />
-                  <Group title="Chiều về" segs={h.checked.chieuve} sel={h.oldSel} onSel={h.setOldSel} disabled={locked} />
+                  <Group title="Chiều đi" segs={h.checked.chieudi} sel={h.oldSel} onSel={h.toggleOld} disabled={locked} />
+                  <Group title="Chiều về" segs={h.checked.chieuve} sel={h.oldSel} onSel={h.toggleOld} disabled={locked} />
                 </div>
               </>
             )}
@@ -358,10 +356,16 @@ export const SunChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, trip })
               <div className="border-t pt-3 space-y-3">
                 <div className="text-sm rounded bg-orange-50 border border-orange-200 p-2 flex items-start gap-2">
                   <Plane className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
-                  {h.oldSel && h.newSel ? (
-                    <span>Thay chặng <b>{segLabel(h.oldSel)}</b> bằng <b>{segLabel(h.newSel)}</b></span>
+                  {h.pairing.ok ? (
+                    <div className="min-w-0 space-y-1">
+                      {h.pairing.old.map((old, i) => (
+                        <div key={i}>Thay chặng <b>{segLabel(old)}</b> bằng <b>{segLabel(h.pairing.ok ? h.pairing.next[i] : {})}</b></div>
+                      ))}
+                    </div>
                   ) : (
-                    <span className="text-gray-600">Chọn 1 chặng hiện tại và 1 chặng mới</span>
+                    <span className="text-gray-600">{h.pairing.ok === false && h.pairing.reason === 'direction'
+                      ? 'Hai cặp phải cùng chiều đi với chiều đi, chiều về với chiều về'
+                      : 'Chọn 1 hoặc 2 chặng hiện tại và cùng số chặng mới'}</span>
                   )}
                 </div>
                 <div className="flex justify-end gap-2">
