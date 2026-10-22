@@ -119,9 +119,43 @@ export function newSegmentsFromTrip(trip: any): SunNewGroups {
   return { out, back };
 }
 
-export function buildChangePayload(pnr: string, oldSeg: SunSeg, newSeg: SunSeg) {
+/** Toggle by object identity; a third selection is ignored. */
+export function toggleSunSelection(selected: SunSeg[], seg: SunSeg): SunSeg[] {
+  if (selected.includes(seg)) return selected.filter((s) => s !== seg);
+  return selected.length >= 2 ? selected : [...selected, seg];
+}
+
+export type SunPairing =
+  | { ok: true; old: SunSeg[]; next: SunSeg[] }
+  | { ok: false; reason: 'selection' | 'direction' };
+
+/** Use source membership/order, not click order or inferred routes. */
+export function pairSunSegments(
+  oldGroups: SunNewGroups, newGroups: SunNewGroups,
+  oldSelected: SunSeg[], newSelected: SunSeg[],
+): SunPairing {
+  const valid = (groups: SunNewGroups, selected: SunSeg[]) =>
+    selected.length >= 1 && selected.length <= 2 && new Set(selected).size === selected.length &&
+    selected.every((s) => [...groups.out, ...groups.back].filter((item) => item === s).length === 1);
+  if (oldSelected.length !== newSelected.length || !valid(oldGroups, oldSelected) || !valid(newGroups, newSelected))
+    return { ok: false, reason: 'selection' };
+  const chosen = (source: SunSeg[], selected: SunSeg[]) => source.filter((s) => selected.includes(s));
+  const oldOut = chosen(oldGroups.out, oldSelected), newOut = chosen(newGroups.out, newSelected);
+  if (oldSelected.length === 2 && oldOut.length !== newOut.length)
+    return { ok: false, reason: 'direction' };
+  return {
+    ok: true,
+    old: [...oldOut, ...chosen(oldGroups.back, oldSelected)],
+    next: [...newOut, ...chosen(newGroups.back, newSelected)],
+  };
+}
+
+export function buildChangePayload(pnr: string, old: SunSeg[], next: SunSeg[]) {
+  if (old.length < 1 || old.length > 2 || old.length !== next.length ||
+      new Set(old).size !== old.length || new Set(next).size !== next.length)
+    throw new Error('Invalid SUN segment pairs');
   // Pass the original objects through untouched (JSON.stringify serializes them as-is).
-  return { pnr, old_itinerary: [oldSeg], new_itinerary: [newSeg] };
+  return { pnr, old_itinerary: [...old], new_itinerary: [...next] };
 }
 
 export interface SunChangeResult {
