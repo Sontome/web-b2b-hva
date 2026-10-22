@@ -7,6 +7,9 @@ import {
   normalizePnr,
   parseChangeResponse,
   parseCheckResponse,
+  pairSunSegments,
+  toggleSunSelection,
+  type SunNewGroups,
   type SunChangeResult,
   type SunCheckData,
   type SunSeg,
@@ -15,12 +18,12 @@ import {
 export const SUN_UNKNOWN_RESULT_MSG =
   'Chưa xác định được kết quả đổi vé. Vui lòng kiểm tra lại PNR trước khi thực hiện tiếp.';
 
-export function useSunChangeTicket() {
+export function useSunChangeTicket(newGroups: SunNewGroups) {
   const [pnr, setPnrState] = useState('');
   const [checked, setChecked] = useState<SunCheckData | null>(null);
   const [checkedPnr, setCheckedPnr] = useState('');
-  const [oldSel, setOldSel] = useState<SunSeg | null>(null);
-  const [newSel, setNewSel] = useState<SunSeg | null>(null);
+  const [oldSel, setOldSel] = useState<SunSeg[]>([]);
+  const [newSel, setNewSel] = useState<SunSeg[]>([]);
   const [result, setResult] = useState<SunChangeResult | null>(null);
   const [checking, setChecking] = useState(false);
   const [changing, setChanging] = useState(false);
@@ -37,8 +40,8 @@ export function useSunChangeTicket() {
     checkAbortRef.current = null;
     setChecked(null);
     setCheckedPnr('');
-    setOldSel(null);
-    setNewSel(null);
+    setOldSel([]);
+    setNewSel([]);
     setResult(null);
     setChecking(false);
     doneRef.current = false;
@@ -85,7 +88,9 @@ export function useSunChangeTicket() {
       setChecked(parsed.data);
       setCheckedPnr(code);
       const all = [...parsed.data.chieudi, ...parsed.data.chieuve];
-      if (all.length === 1) setOldSel(all[0]);
+      if (all.length === 1) setOldSel([all[0]]);
+      const allNew = [...newGroups.out, ...newGroups.back];
+      if (allNew.length === 1) setNewSel([allNew[0]]);
     } catch (e) {
       if (sid !== sessionRef.current) return;
       if (e instanceof SunNetworkError && e.kind === 'aborted') return;
@@ -95,17 +100,29 @@ export function useSunChangeTicket() {
     } finally {
       if (sid === sessionRef.current) setChecking(false);
     }
-  }, [pnr, invalidate]);
+  }, [pnr, invalidate, newGroups]);
+
+  const pairing = pairSunSegments(
+    { out: checked?.chieudi ?? [], back: checked?.chieuve ?? [] }, newGroups, oldSel, newSel,
+  );
+  const toggleOld = useCallback((seg: SunSeg) => {
+    if (changeLockRef.current || doneRef.current) return;
+    setOldSel((selected) => toggleSunSelection(selected, seg));
+  }, []);
+  const toggleNew = useCallback((seg: SunSeg) => {
+    if (changeLockRef.current || doneRef.current) return;
+    setNewSel((selected) => toggleSunSelection(selected, seg));
+  }, []);
 
   const runChange = useCallback(async () => {
     if (changeLockRef.current || doneRef.current) return;
-    if (!checked || !checkedPnr || !oldSel || !newSel) return;
+    if (!checked || !checkedPnr || !pairing.ok || checking) return;
     changeLockRef.current = true;
     const sid = sessionRef.current;
     setChanging(true);
     setError(null);
     try {
-      const payload = buildChangePayload(checkedPnr, oldSel, newSel);
+      const payload = buildChangePayload(checkedPnr, pairing.old, pairing.next);
       const { ok, json } = await sunChangePnr(payload);
       if (sid !== sessionRef.current) return;
       if (ok && json === null) throw new SunNetworkError('network', 'non-json');
@@ -123,20 +140,22 @@ export function useSunChangeTicket() {
       // Outcome unknown: force a fresh PNR check, never retry.
       setChecked(null);
       setCheckedPnr('');
-      setOldSel(null);
-      setNewSel(null);
+      setOldSel([]);
+      setNewSel([]);
       setError(SUN_UNKNOWN_RESULT_MSG);
       toast.error(SUN_UNKNOWN_RESULT_MSG);
     } finally {
-      changeLockRef.current = false;
-      if (sid === sessionRef.current) setChanging(false);
+      if (sid === sessionRef.current) {
+        changeLockRef.current = false;
+        setChanging(false);
+      }
     }
-  }, [checked, checkedPnr, oldSel, newSel]);
+  }, [checked, checkedPnr, pairing, checking]);
 
-  const canConfirm = !!checked && !!checkedPnr && !!oldSel && !!newSel && !changing && !checking && !result;
+  const canConfirm = !!checked && !!checkedPnr && pairing.ok && !changing && !checking && !result;
 
   return {
-    pnr, setPnr, checked, checkedPnr, oldSel, setOldSel, newSel, setNewSel,
+    pnr, setPnr, checked, checkedPnr, oldSel, toggleOld, newSel, toggleNew, pairing,
     result, checking, changing, error, runCheck, runChange, reset, canConfirm,
   };
 }
