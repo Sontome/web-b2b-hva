@@ -38,6 +38,9 @@ All colors MUST be HSL.
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+    --promo-active: 145 65% 30%;
+    --promo-upcoming: 210 75% 42%;
+    --promo-expired: 30 90% 38%;
 
     --sidebar-background: 0 0% 98%;
 
@@ -58,6 +61,9 @@ All colors MUST be HSL.
 
   .dark {
     --background: 222.2 84% 4.9%;
+    --promo-active: 145 65% 65%;
+    --promo-upcoming: 210 75% 72%;
+    --promo-expired: 30 90% 70%;
     --foreground: 210 40% 98%;
 
     --card: 222.2 84% 4.9%;
@@ -161,6 +167,10 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
+  .promo-status-active { color: hsl(var(--promo-active)); border-color: hsl(var(--promo-active) / 0.3); background: hsl(var(--promo-active) / 0.08); }
+  .promo-status-upcoming { color: hsl(var(--promo-upcoming)); border-color: hsl(var(--promo-upcoming) / 0.3); background: hsl(var(--promo-upcoming) / 0.08); }
+  .promo-status-expired { color: hsl(var(--promo-expired)); border-color: hsl(var(--promo-expired) / 0.3); background: hsl(var(--promo-expired) / 0.08); }
+  .promo-status-disabled { color: hsl(var(--muted-foreground)); background: hsl(var(--muted)); }
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
