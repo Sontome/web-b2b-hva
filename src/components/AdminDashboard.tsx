@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Settings, DollarSign, Mail, User, LogOut, Phone, Facebook, Ticket, Clock, Check, AlertTriangle, Globe, MailCheck, CalendarDays } from 'lucide-react';
+import { Users, Settings, DollarSign, Mail, User, LogOut, Phone, Facebook, Ticket, Clock, Check, AlertTriangle, Globe, MailCheck, CalendarDays, Tag } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -722,6 +722,19 @@ export const AdminDashboard = () => {
               </Dialog>
             </CardContent>
           </Card>
+          {profile?.role === 'admin' && <>
+          <Button asChild variant="ghost" className="h-auto p-0 text-left whitespace-normal hover:bg-transparent">
+            <a href="/admin/promocodes" onClick={event => { event.preventDefault(); navigate('/admin/promocodes'); }} className="block w-full">
+              <Card className="w-full cursor-pointer hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Promocode</CardTitle>
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent><div className="text-2xl font-bold">Quản lý</div><p className="text-xs text-muted-foreground">Quản lý mã khuyến mãi theo hãng bay</p></CardContent>
+              </Card>
+            </a>
+          </Button>
+          </>}
         </div>
 
         {/* Search Statistics */}
