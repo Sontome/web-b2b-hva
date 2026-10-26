@@ -47,7 +47,7 @@ export function promoPayload(form: PromoForm) {
 export function promoError(error: unknown) {
   const e = error as { code?: string; message?: string } | null;
   if (e?.code === '23505') return 'Mã này đã tồn tại cho hãng đã chọn.';
-  if (e?.code === '42501' || e?.code === 'PGRST301') return 'Bạn không có quyền quản lý Promocode. Vui lòng kiểm tra lại tài khoản Admin.';
+  if (e?.code === '42501' || e?.code === 'PGRST301') return 'Bạn không có quyền quản lý PromoCode. Vui lòng kiểm tra lại tài khoản Admin.';
   return e?.message || 'Không thể lưu thay đổi. Vui lòng thử lại.';
 }
 export const escapePromoSearch = (value: string) => `%${value.replace(/[\\%_]/g, '\\$&')}%`;
