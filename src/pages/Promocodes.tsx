@@ -85,7 +85,7 @@ export default function Promocodes() {
   return <div className="min-h-screen bg-background p-4 md:p-8">
     <main className="max-w-7xl mx-auto space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div><Button variant="outline" size="sm" className="mb-3" onClick={() => navigate('/admin')}><ArrowLeft className="w-4 h-4 mr-2" />Quay lại Admin Dashboard</Button><h1 className="text-2xl font-bold flex items-center gap-2"><Tag className="w-6 h-6" />Quản lý Promocode</h1><p className="text-sm text-muted-foreground mt-1">Cấu hình mã khuyến mãi sử dụng khi tìm vé</p></div>
+        <div><Button variant="outline" size="sm" className="mb-3" onClick={() => navigate('/admin')}><ArrowLeft className="w-4 h-4 mr-2" />Quay lại Admin Dashboard</Button><h1 className="text-2xl font-bold flex items-center gap-2"><Tag className="w-6 h-6" />Quản lý PromoCode</h1><p className="text-sm text-muted-foreground mt-1">Cấu hình mã khuyến mãi sử dụng khi tìm vé</p></div>
         <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}><RefreshCw className={`w-4 h-4 mr-2 ${query.isFetching ? 'animate-spin' : ''}`} />Làm mới danh sách</Button><Button onClick={() => setEditor({ row: null })}><Plus className="w-4 h-4 mr-2" />Thêm mã</Button></div>
       </header>
       <p className="text-sm text-muted-foreground border-l-2 border-primary pl-3">Thay đổi được lưu ngay. Hệ thống tìm vé cập nhật cấu hình trong tối đa khoảng 30 phút khi hoạt động bình thường.</p>
@@ -103,7 +103,7 @@ export default function Promocodes() {
         {!query.isError && !query.isPending && <div className="flex flex-wrap items-center justify-between gap-3 text-sm"><p>{total} kết quả · Trang {filters.page}/{pages}</p><div className="flex gap-2"><Button variant="outline" disabled={filters.page <= 1 || query.isFetching} onClick={() => setFilters(f => ({ ...f, page: f.page - 1 }))}>Trước</Button><Button variant="outline" disabled={filters.page >= pages || query.isFetching} onClick={() => setFilters(f => ({ ...f, page: f.page + 1 }))}>Sau</Button></div></div>}
       </section>
     </main>
-    {editor && <PromoEditor row={editor.row} onClose={() => setEditor(null)} onSave={payload => { if (!admin) return Promise.reject(new Error('Bạn không có quyền quản lý Promocode.')); return save.mutateAsync({ id: editor.row?.id ?? null, payload }); }} />}
+    {editor && <PromoEditor row={editor.row} onClose={() => setEditor(null)} onSave={payload => { if (!admin) return Promise.reject(new Error('Bạn không có quyền quản lý PromoCode.')); return save.mutateAsync({ id: editor.row?.id ?? null, payload }); }} />}
     <Dialog open={!!target} onOpenChange={open => { if (!open && !deleteLock.current) setTarget(null); }}><DialogContent><DialogHeader><DialogTitle>Xóa mã khuyến mãi?</DialogTitle><DialogDescription>Xóa mã <strong className="break-all">{target?.code}</strong> của {target ? airlineName(target.airline) : ''}? Có thể tắt mã nếu muốn giữ lại cấu hình.</DialogDescription></DialogHeader>{deleteError && <p role="alert" className="text-sm text-destructive">{deleteError}</p>}<DialogFooter><Button variant="outline" disabled={remove.isPending} onClick={() => setTarget(null)}>Hủy</Button><Button variant="destructive" disabled={remove.isPending} onClick={() => void onDelete()}>{remove.isPending ? 'Đang xóa…' : 'Xóa mã'}</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }
