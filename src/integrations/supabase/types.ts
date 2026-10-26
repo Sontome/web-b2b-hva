@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      airline_promo_codes: {
+        Row: {
+          airline: string
+          code: string
+          created_at: string
+          enabled: boolean
+          id: string
+          note: string | null
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          airline: string
+          code: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          note?: string | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          airline?: string
+          code?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          note?: string | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       always_send_phone: {
         Row: {
           phone: string
@@ -1604,6 +1640,7 @@ export type Database = {
         Returns: boolean
       }
       mq_sync_claimed_batch: { Args: { p_claims: Json }; Returns: number }
+      run_add_email_ape_sun_worker: { Args: never; Returns: undefined }
       sync_kakanoti_phone_sent: { Args: never; Returns: undefined }
       update_kakanoti_row_sent: { Args: never; Returns: number }
     }
