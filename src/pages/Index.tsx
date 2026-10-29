@@ -78,6 +78,7 @@ export default function Index() {
   const [mdMode, setMdMode] = useState(false);
   const [mdFlights, setMdFlights] = useState<MultiCityFlight[]>([]);
   const [mdSearch, setMdSearch] = useState<MultiCitySearchData | null>(null);
+  const [selectedMdFlight, setSelectedMdFlight] = useState<MultiCityFlight | null>(null);
   const [sunpqOpen, setSunpqOpen] = useState(false);
   const [sunpqFlights, setSunpqFlights] = useState<SunPQTrip[]>([]);
   const [sunpqLoading, setSunpqLoading] = useState(false);
@@ -942,6 +943,7 @@ export default function Index() {
                 <VnaMultiCityCard
                   key={f.id}
                   flight={f}
+                  onHoldTicket={profile?.perm_hold_ticket === true ? setSelectedMdFlight : undefined}
                   showStuCheck={!!mdSearch && mdSearch.ptcCode !== 'STU'}
                   onCheckStu={() => searchFormRef.current?.searchWithPtc('STU')}
                 />
@@ -1135,6 +1137,27 @@ export default function Index() {
             />
           )}
           
+          {selectedMdFlight && selectedMdFlight.legs[0] && mdSearch && (
+            <VNABookingModal
+              isOpen
+              onClose={() => setSelectedMdFlight(null)}
+              ptcCode={mdSearch.ptcCode}
+              multiCityFlight={selectedMdFlight}
+              flightInfo={{
+                dep: selectedMdFlight.legs[0].from,
+                arr: selectedMdFlight.legs[0].to,
+                depdate: selectedMdFlight.legs[0].departureDate,
+                deptime: selectedMdFlight.legs[0].departureTime,
+                tripType: 'OW',
+              }}
+              maxSeats={selectedMdFlight.availableSeats}
+              onBookingSuccess={(pnr) => {
+                toast({ title: 'Giữ vé thành công!', description: `Mã giữ vé: ${pnr}. Đang lấy ảnh mặt vé...` });
+                setTicketPNR(pnr);
+                setTimeout(() => setShowVNATicketModal(true), 500);
+              }}
+            />
+          )}
           {/* Other Airlines Modal */}
           <OtherAirlinesModal
             isOpen={showOtherAirlinesModal}
