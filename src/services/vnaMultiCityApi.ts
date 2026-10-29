@@ -33,6 +33,7 @@ export interface MultiCityFlight {
   price: number;
   availableSeats: number;
   baggageType: string;
+  listItinerary?: Record<string, unknown>;
 }
 
 const ymd = (d: Date) =>
@@ -60,7 +61,7 @@ export const buildMultiCityPayload = (data: MultiCitySearchData) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const parseLeg = (raw: any, index: number): MultiCityLeg => ({
   index,
-  flightNumber: raw?.id ? `VN${raw.id}` : '',
+  flightNumber: raw?.số_hiệu_máy_bay || (raw?.id ? `VN${String(raw.id).replace(/^VN/i, '')}` : ''),
   from: raw?.nơi_đi ?? '',
   to: raw?.nơi_đến ?? '',
   departureTime: raw?.giờ_cất_cánh ?? '',
@@ -99,6 +100,7 @@ export const fetchVNAMultiCity = async (data: MultiCitySearchData): Promise<Mult
       price: parseInt(info.giá_vé) || 0,
       availableSeats: parseInt(info.số_ghế_còn) || 0,
       baggageType: info.hành_lý_vna ?? '',
+      listItinerary: Object.fromEntries(Object.entries(item).filter(([key]) => /^chặng_\d+$/.test(key) || key === 'thông_tin_chung')),
     });
   });
   return result;
