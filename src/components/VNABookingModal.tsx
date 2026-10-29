@@ -1,4 +1,6 @@
-import { useState,useEffect  } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import type { MultiCityFlight } from '@/services/vnaMultiCityApi';
+import { bookVnaMultiCity } from '@/services/vnaBookingV3';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +44,7 @@ interface VNABookingModalProps {
     tripType: 'OW' | 'RT';
   };
   maxSeats: number;
+  multiCityFlight?: MultiCityFlight;
   onBookingSuccess?: (pnr: string) => void;
 }
 
@@ -51,6 +54,7 @@ export const VNABookingModal = ({
   ptcCode,
   flightInfo,
   maxSeats,
+  multiCityFlight,
   onBookingSuccess
 }: VNABookingModalProps) => {
   const [passengers, setPassengers] = useState<PassengerInfo[]>([
@@ -65,6 +69,7 @@ export const VNABookingModal = ({
   // not user-selectable and never hard-coded to VFR.
   const doiTuong = ptcCode || 'ADT';
   const [isLoading, setIsLoading] = useState(false);
+  const submitting = useRef(false);
   const [successData, setSuccessData] = useState<{ pnr: string } | null>(null);
   const [ticketEmail, setTicketEmail] = useState("");
   const [ticketPhone, setTicketPhone] = useState("");
@@ -227,6 +232,9 @@ export const VNABookingModal = ({
   };
 
   const handleSubmit = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
+    setIsLoading(true);
     try {
       // Validate
       
@@ -239,6 +247,11 @@ export const VNABookingModal = ({
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      if (multiCityFlight) {
+        if (!user) throw new Error('Vui lòng đăng nhập để giữ vé');
+        const profile = await loadCachedProfile(user.id);
+        if (!profile?.perm_hold_ticket) throw new Error('Bạn chưa được cấp quyền giữ vé');
+      }
       if (user && (ticketEmail || ticketPhone)) {
         await supabase
           .from("profiles")
@@ -277,7 +290,12 @@ export const VNABookingModal = ({
       }
       
 
-      // Build URL with query params
+      let data: { status?: string; pnr?: string; message?: string };
+      if (multiCityFlight) {
+        if (!user) throw new Error('Vui lòng đăng nhập để giữ vé');
+        data = await bookVnaMultiCity([multiCityFlight, passengers, doiTuong, ticketEmail, ticketPhone, user.id]);
+      } else {
+      // Legacy one-way/round-trip booking remains unchanged.
       const params = new URLSearchParams();
       params.append('dep', flightInfo.dep);
       params.append('arr', flightInfo.arr);
@@ -307,14 +325,14 @@ export const VNABookingModal = ({
         params.append('hanhkhach', formattedName);
       }
 
-      setIsLoading(true);
       const response = await fetch(`https://apilive.hanvietair.com/giuveVNAlive?${params.toString()}`, {
         method: 'POST',
         headers: { 'accept': 'application/json' }
       });
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
+      data = await response.json();
+      }
 
       if (data.status === 'OK' && data.pnr) {
         // Save to database
@@ -322,7 +340,14 @@ export const VNABookingModal = ({
         if (user) {
           const { saveHeldTicket } = await import('@/utils/heldTickets');
           const namelist = passengers.map(p => `${p.Họ ?? ''} ${p.Tên ?? ''}`.trim());
-          const segs = [
+          const segs = multiCityFlight ? multiCityFlight.legs.map((leg, index) => ({
+            segment_order: index + 1,
+            departure_airport: leg.from,
+            arrival_airport: leg.to,
+            departure_date: leg.departureDate,
+            departure_time: leg.departureTime,
+            trip: `${leg.from}-${leg.to}`,
+          })) : [
             {
               segment_order: 1,
               departure_airport: flightInfo.dep,
@@ -332,7 +357,7 @@ export const VNABookingModal = ({
               trip: `${flightInfo.dep}-${flightInfo.arr}`,
             },
           ];
-          if (flightInfo.tripType === 'RT' && flightInfo.arrdate && flightInfo.arrtime) {
+          if (!multiCityFlight && flightInfo.tripType === 'RT' && flightInfo.arrdate && flightInfo.arrtime) {
             segs.push({
               segment_order: 2,
               departure_airport: flightInfo.arr,
@@ -351,13 +376,14 @@ export const VNABookingModal = ({
           });
         }
 
-        setSuccessData({ pnr: data.pnr });
+        const pnr = data.pnr;
+        setSuccessData({ pnr });
         
         // Auto close after 1.5s and trigger callback
         setTimeout(() => {
           setSuccessData(null);
           onClose();
-          onBookingSuccess?.(data.pnr);
+          onBookingSuccess?.(pnr);
         }, 1500);
       } else {
         toast({
@@ -375,6 +401,7 @@ export const VNABookingModal = ({
         variant: "destructive"
       });
     } finally {
+      submitting.current = false;
       setIsLoading(false);
     }
   };
@@ -384,13 +411,20 @@ export const VNABookingModal = ({
   const twelveYearsAgo = new Date(today.getFullYear() - 12, today.getMonth(), today.getDate());
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={() => { if (!isLoading) onClose(); }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Thông Tin Hành Khách - Giữ Vé VNA</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
+            {multiCityFlight && (
+              <div className="border-b pb-3 space-y-1 text-sm text-muted-foreground">
+                {multiCityFlight.legs.map(leg => (
+                  <p key={leg.index}>Chặng {leg.index}: {leg.from} → {leg.to} · {leg.flightNumber} · Hạng {leg.ticketClass} · {leg.departureTime} {leg.departureDate}</p>
+                ))}
+              </div>
+            )}
             <div>
               <Label>Đối tượng (theo kết quả tìm kiếm)</Label>
               <Select value={doiTuong} disabled>
@@ -510,7 +544,8 @@ export const VNABookingModal = ({
                             if (!newPassengers[index].infant) {
                               newPassengers[index].infant = { Họ: '', Tên: '', Giới_tính: 'nam' };
                             }
-                            newPassengers[index].infant!.Họ = e.target.value;
+                            const infant = newPassengers[index].infant;
+                            if (infant) infant.Họ = e.target.value;
                             setPassengers(newPassengers);
                           }}
                           placeholder="NGUYEN"
@@ -526,7 +561,8 @@ export const VNABookingModal = ({
                             if (!newPassengers[index].infant) {
                               newPassengers[index].infant = { Họ: '', Tên: '', Giới_tính: 'nam' };
                             }
-                            newPassengers[index].infant!.Tên = e.target.value;
+                            const infant = newPassengers[index].infant;
+                            if (infant) infant.Tên = e.target.value;
                             setPassengers(newPassengers);
                           }}
                           placeholder="TIEU VU"
@@ -542,7 +578,8 @@ export const VNABookingModal = ({
                             if (!newPassengers[index].infant) {
                               newPassengers[index].infant = { Họ: '', Tên: '', Giới_tính: 'nam' };
                             }
-                            newPassengers[index].infant!.Giới_tính = v;
+                            const infant = newPassengers[index].infant;
+                            if (infant) infant.Giới_tính = v;
                             setPassengers(newPassengers);
                           }}
                         >
@@ -567,7 +604,8 @@ export const VNABookingModal = ({
                             if (!newPassengers[index].infant) {
                               newPassengers[index].infant = { Họ: '', Tên: '', Giới_tính: 'nam' };
                             }
-                            newPassengers[index].infant!.Ngày_sinh = date;
+                            const infant = newPassengers[index].infant;
+                            if (infant) infant.Ngày_sinh = date;
                             setPassengers(newPassengers);
                           }}
                           placeholder="VD: 15/06/2024"
