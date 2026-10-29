@@ -140,6 +140,42 @@ export type Database = {
         }
         Relationships: []
       }
+      flight_change_email: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          created_at: string
+          hang: string
+          id: number
+          message_id: string | null
+          sender_email: string
+          sender_name: string | null
+          subject: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          hang: string
+          id?: number
+          message_id?: string | null
+          sender_email: string
+          sender_name?: string | null
+          subject: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          hang?: string
+          id?: number
+          message_id?: string | null
+          sender_email?: string
+          sender_name?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
       held_ticket_segments: {
         Row: {
           arrival_airport: string
