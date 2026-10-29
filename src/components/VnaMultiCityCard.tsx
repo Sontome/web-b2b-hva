@@ -12,6 +12,7 @@ interface Props {
   flight: MultiCityFlight;
   showStuCheck?: boolean;
   onCheckStu?: () => void;
+  onHoldTicket?: (flight: MultiCityFlight) => void;
 }
 
 const formatPrice = (p: number) => new Intl.NumberFormat('ko-KR').format(p);
@@ -20,7 +21,7 @@ const formatDate = (d: string) => {
   return month ? `${day}/${month}` : d;
 };
 
-export const VnaMultiCityCard: React.FC<Props> = ({ flight, showStuCheck, onCheckStu }) => {
+export const VnaMultiCityCard: React.FC<Props> = ({ flight, showStuCheck, onCheckStu, onHoldTicket }) => {
   const { profile } = useAuth();
   const { toast } = useToast();
 
@@ -86,12 +87,12 @@ export const VnaMultiCityCard: React.FC<Props> = ({ flight, showStuCheck, onChec
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span tabIndex={0}>
-                      <Button variant="outline" size="sm" disabled aria-label="Giữ vé">
+                      <Button variant="outline" size="sm" disabled={!onHoldTicket || flight.availableSeats < 1} onClick={() => onHoldTicket?.(flight)} aria-label="Giữ vé">
                         <ShoppingCart className="w-4 h-4" />
                       </Button>
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent>Chức năng giữ vé nhiều chặng đang được phát triển</TooltipContent>
+                  <TooltipContent>{!onHoldTicket ? 'Bạn chưa được cấp quyền giữ vé' : flight.availableSeats < 1 ? 'Không còn ghế' : 'Giữ vé VNA nhiều chặng'}</TooltipContent>
                 </Tooltip>
               </div>
             </TooltipProvider>
