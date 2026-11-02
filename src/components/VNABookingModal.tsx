@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import type { MultiCityFlight } from '@/services/vnaMultiCityApi';
 import { bookVnaMultiCity } from '@/services/vnaBookingV3';
+import { vnaBookingFlight } from '@/lib/vnaBookingV3';
+import type { Flight } from '@/services/flightApi';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +47,7 @@ interface VNABookingModalProps {
   };
   maxSeats: number;
   multiCityFlight?: MultiCityFlight;
+  selectedFlight?: Flight;
   onBookingSuccess?: (pnr: string) => void;
 }
 
@@ -55,6 +58,7 @@ export const VNABookingModal = ({
   flightInfo,
   maxSeats,
   multiCityFlight,
+  selectedFlight,
   onBookingSuccess
 }: VNABookingModalProps) => {
   const [passengers, setPassengers] = useState<PassengerInfo[]>([
@@ -65,6 +69,7 @@ export const VNABookingModal = ({
       type: 'người_lớn'
     }
   ]);
+  const bookingFlight = multiCityFlight ?? (selectedFlight?.vnaItinerary ? vnaBookingFlight(selectedFlight) : undefined);
   // Passenger type is taken directly from the search that produced this flight —
   // not user-selectable and never hard-coded to VFR.
   const doiTuong = ptcCode || 'ADT';
@@ -247,7 +252,7 @@ export const VNABookingModal = ({
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (multiCityFlight) {
+      if (bookingFlight) {
         if (!user) throw new Error('Vui lòng đăng nhập để giữ vé');
         const profile = await loadCachedProfile(user.id);
         if (!profile?.perm_hold_ticket) throw new Error('Bạn chưa được cấp quyền giữ vé');
@@ -291,10 +296,11 @@ export const VNABookingModal = ({
       
 
       let data: { status?: string; pnr?: string; message?: string };
-      if (multiCityFlight) {
+      if (bookingFlight) {
         if (!user) throw new Error('Vui lòng đăng nhập để giữ vé');
-        data = await bookVnaMultiCity([multiCityFlight, passengers, doiTuong, ticketEmail, ticketPhone, user.id]);
+        data = await bookVnaMultiCity([bookingFlight, passengers, doiTuong, ticketEmail, ticketPhone, user.id]);
       } else {
+      if (selectedFlight) throw new Error('Vui lòng tìm lại vé VNA để giữ vé');
       // Legacy one-way/round-trip booking remains unchanged.
       const params = new URLSearchParams();
       params.append('dep', flightInfo.dep);
@@ -340,7 +346,7 @@ export const VNABookingModal = ({
         if (user) {
           const { saveHeldTicket } = await import('@/utils/heldTickets');
           const namelist = passengers.map(p => `${p.Họ ?? ''} ${p.Tên ?? ''}`.trim());
-          const segs = multiCityFlight ? multiCityFlight.legs.map((leg, index) => ({
+          const segs = bookingFlight ? bookingFlight.legs.map((leg, index) => ({
             segment_order: index + 1,
             departure_airport: leg.from,
             arrival_airport: leg.to,
@@ -357,7 +363,7 @@ export const VNABookingModal = ({
               trip: `${flightInfo.dep}-${flightInfo.arr}`,
             },
           ];
-          if (!multiCityFlight && flightInfo.tripType === 'RT' && flightInfo.arrdate && flightInfo.arrtime) {
+          if (!bookingFlight && flightInfo.tripType === 'RT' && flightInfo.arrdate && flightInfo.arrtime) {
             segs.push({
               segment_order: 2,
               departure_airport: flightInfo.arr,
@@ -418,10 +424,10 @@ export const VNABookingModal = ({
           </DialogHeader>
 
           <div className="space-y-6">
-            {multiCityFlight && (
+            {bookingFlight && (
               <div className="border-b pb-3 space-y-1 text-sm text-muted-foreground">
-                {multiCityFlight.legs.map(leg => (
-                  <p key={leg.index}>Chặng {leg.index}: {leg.from} → {leg.to} · {leg.flightNumber} · Hạng {leg.ticketClass} · {leg.departureTime} {leg.departureDate}</p>
+                {bookingFlight.legs.map(leg => (
+                  <p key={leg.index}>Chặng {leg.index}: {leg.departureDate} {leg.departureTime}({leg.from}) → {leg.arrivalDate} {leg.arrivalTime}({leg.to}) · {leg.flightNumber} · Hạng {leg.ticketClass}</p>
                 ))}
               </div>
             )}
