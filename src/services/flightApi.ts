@@ -1,3 +1,5 @@
+import { parseVnaV5, type VnaItineraryV5 } from '@/lib/vnaV5';
+
 interface SearchFormData {
   from: string;
   to: string;
@@ -112,6 +114,7 @@ interface VJFlightResponse {
 }
 
 export interface Flight {
+  vnaItinerary?: VnaItineraryV5;
   id: string;
   airline: 'VJ' | 'VNA';
   flightNumber: string;
@@ -575,8 +578,8 @@ export const KOREAN_AIRPORT_CODES = ['ICN', 'PUS', 'TAE'];
 export const getDefaultPtcCode = (from: string): 'VFR' | 'ADT' =>
   KOREAN_AIRPORT_CODES.includes(from) ? 'VFR' : 'ADT';
 
-/** VNA fares via check-ve-v4 (same response shape as v3); returns VNA flights only. */
-export const fetchVNAFlightsV4 = async (searchData: SearchFormData): Promise<Flight[]> => {
+/** VNA V5 keeps every segment and the complete selected fare option. */
+export const fetchVNAFlightsV5 = async (searchData: SearchFormData): Promise<Flight[]> => {
   if (!searchData.departureDate) return [];
   const ymd = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -595,15 +598,15 @@ export const fetchVNAFlightsV4 = async (searchData: SearchFormData): Promise<Fli
     cabin_class: 'Y',
     ptc_code: ptc,
   };
-  const response = await fetch('https://apilive.hanvietair.com/vna/check-ve-v4', {
+  const response = await fetch('https://apilive.hanvietair.com/vna/check-ve-v5', {
     method: 'POST',
     headers: { accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify(requestBody),
   });
-  if (!response.ok) throw new Error(`Vietnam Airlines v4 API error: ${response.status}`);
-  const data: VNAFlightResponse = await response.json();
-  if (data.status_code !== 200 || !data.body) return [];
+  if (!response.ok) throw new Error(`Vietnam Airlines v5 API error: ${response.status}`);
+  const data: { status_code: number; body: VnaItineraryV5[] } = await response.json();
+  if (data.status_code !== 200 || !Array.isArray(data.body)) return [];
   // Stamp every flight with the ptc_code used by this search so downstream
   // flows (hold ticket) reuse the exact same type without user re-selection.
-  return parseVNAData(data).vnaFlights.map((f) => ({ ...f, ptcCode: ptc }));
+  return parseVnaV5(data.body, ptc, getCityName);
 };
