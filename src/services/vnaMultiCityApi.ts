@@ -1,4 +1,4 @@
-// VNA multi-city (trip_type "MD") search via /vna/check-ve-v4. VNA only — no other airlines.
+// VNA multi-city (trip_type "MD") search via /vna/check-ve-v5. VNA only — no other airlines.
 
 export interface MultiCityLegInput {
   origin: string;
@@ -75,7 +75,7 @@ const parseLeg = (raw: any, index: number): MultiCityLeg => ({
 });
 
 export const fetchVNAMultiCity = async (data: MultiCitySearchData): Promise<MultiCityFlight[]> => {
-  const response = await fetch('https://apilive.hanvietair.com/vna/check-ve-v4', {
+  const response = await fetch('https://apilive.hanvietair.com/vna/check-ve-v5', {
     method: 'POST',
     headers: { accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify(buildMultiCityPayload(data)),
