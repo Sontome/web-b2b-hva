@@ -12,6 +12,7 @@ import { useHoverSound } from '@/hooks/useHoverSound';
 import { useTicketRulesDataset } from '@/hooks/useTicketRulesDataset';
 import { applyTicketRules, formatNotesLine } from '@/utils/ticketRuleEngine';
 import type { RuleSegmentInput, RuleTicketInput } from '@/types/ticketRules';
+import { formatVnaDirection, formatVnaSegment, vnaWaitTime } from '@/lib/vnaV5';
 
 interface FlightCardProps {
   /** Show the "Check giá STU" button on VNA cards (type != STU and Korean departure) */
@@ -124,6 +125,17 @@ export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHol
         });
       }
     }
+    if (flight.vnaItinerary) {
+      segments.length = 0;
+      [flight.vnaItinerary.chiều_đi, flight.vnaItinerary.chiều_về ?? []].forEach((direction, legIndex) => {
+        direction.forEach((s, index) => segments.push({
+          airline: 'VNA', from: s.nơi_đi, to: s.nơi_đến,
+          departure_time: s.giờ_cất_cánh, arrival_time: s.giờ_hạ_cánh,
+          departure_date: s.ngày_cất_cánh, segment_order: index + 1,
+          leg_index: flight.return ? legIndex : null, leg_size: direction.length, booking_class: s.loại_vé,
+        }));
+      });
+    }
     const input: RuleTicketInput = { segments, raw: flight };
     return applyTicketRules(input, rulesDataset);
   }, [flight, rulesDataset]);
@@ -198,6 +210,11 @@ export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHol
   };
 
   const formatFlightWithStops = (isReturn = false) => {
+    if (flight.vnaItinerary) {
+      const direction = isReturn ? flight.vnaItinerary.chiều_về : flight.vnaItinerary.chiều_đi;
+      // Connecting tickets copy every individual departure and arrival.
+      if (direction && (flight.vnaItinerary.chiều_đi.length > 1 || (flight.vnaItinerary.chiều_về?.length ?? 0) > 1)) return formatVnaDirection(direction);
+    }
     const departureInfo = isReturn ? flight.return?.departure : flight.departure;
     const arrivalInfo = isReturn ? flight.return?.arrival : flight.arrival;
     const stopInfo = isReturn ? flight.return?.stopInfo : flight.stopInfo;
@@ -230,10 +247,13 @@ export const FlightCard: React.FC<FlightCardProps> = ({ flight, priceMode, onHol
   const handleCopyFlight = () => {
     const outboundLine = formatFlightWithStops(false);
     const returnLine = flight.return ? formatFlightWithStops(true) : '';
+    const copyPrice = flight.vnaItinerary && (flight.vnaItinerary.chiều_đi.length > 1 || (flight.vnaItinerary.chiều_về?.length ?? 0) > 1)
+      ? new Intl.NumberFormat('vi-VN').format(ruleEffects.priceOverride ?? adjustedPrice)
+      : formatPrice(ruleEffects.priceOverride ?? adjustedPrice);
     
     const copyText = `${outboundLine}${returnLine ? `\n\n${returnLine}` : ''}
 
-${ruleEffects.baggage ?? getBaggageInfo()}, giá vé = ${formatPrice(ruleEffects.priceOverride ?? adjustedPrice)}w${notesLine ? `\n${notesLine}` : ''}`;
+${ruleEffects.baggage ?? getBaggageInfo()}, giá vé = ${copyPrice}w${notesLine ? `\n${notesLine}` : ''}`;
 
     navigator.clipboard.writeText(copyText).then(() => {
       toast({
@@ -329,6 +349,23 @@ ${ruleEffects.baggage ?? getBaggageInfo()}, giá vé = ${formatPrice(ruleEffects
           
           {/* Flight Details */}
           <div className="space-y-3">
+            {flight.vnaItinerary ? (
+              [flight.vnaItinerary.chiều_đi, flight.vnaItinerary.chiều_về ?? []].map((direction, directionIndex) => direction.length > 0 && (
+                <div key={directionIndex} className="space-y-2 text-sm">
+                  {flight.return && <div className="font-semibold">{directionIndex === 0 ? 'Chiều đi' : 'Chiều về'}:</div>}
+                  {direction.map((segment, index) => (
+                    <div key={`${directionIndex}-${index}`} className="flex items-start gap-2">
+                      <Plane className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      <div className="min-w-0 space-y-1">
+                        <p className="break-words">{formatVnaSegment(segment)}</p>
+                        <p className="text-muted-foreground">{segment.số_hiệu_máy_bay} · Hạng {segment.loại_vé}</p>
+                        {direction[index + 1] && <p className="text-muted-foreground">Chờ tại {segment.nơi_đến}: {vnaWaitTime(segment, direction[index + 1])}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))
+            ) : <>
             {/* Outbound Flight */}
             {hasStops(false) ? (
               <div className="text-sm space-y-1">
@@ -392,6 +429,7 @@ ${ruleEffects.baggage ?? getBaggageInfo()}, giá vé = ${formatPrice(ruleEffects
                 </div>
               )
             )}
+            </>}
           </div>
 
           {/* Baggage and Price Info */}
