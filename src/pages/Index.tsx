@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FlightSearchForm, SearchFormData, isKoreanDeparture, type FlightSearchFormHandle } from '@/components/FlightSearchForm';
 import { FlightCard } from '@/components/FlightCard';
 import { FlightFilters, FilterOptions } from '@/components/FlightFilters';
-import { fetchVietJetFlights, fetchVietnamAirlinesFlights, fetchVNAFlightsV4, getDefaultPtcCode, Flight, OtherAirlineFlight } from '@/services/flightApi';
+import { fetchVietJetFlights, fetchVietnamAirlinesFlights, fetchVNAFlightsV5, getDefaultPtcCode, Flight, OtherAirlineFlight } from '@/services/flightApi';
 import { fetchVNAMultiCity, type MultiCityFlight, type MultiCitySearchData } from '@/services/vnaMultiCityApi';
 import { VnaMultiCityCard } from '@/components/VnaMultiCityCard';
 import { searchLowFare, LowFareDay } from '../services/lowfareService';
@@ -532,10 +532,10 @@ export default function Index() {
       }
 
       if (canCheckVNA) {
-        // VNA fares come from check-ve-v4; shown as soon as they arrive
-        const vnaV4Promise = fetchVNAFlightsV4(searchData);
-        promises.push(vnaV4Promise);
-        vnaV4Promise.then(vnaFlights => {
+        // VNA fares come from V5; shown as soon as they arrive
+        const vnaV5Promise = fetchVNAFlightsV5(searchData);
+        promises.push(vnaV5Promise);
+        vnaV5Promise.then(vnaFlights => {
           if (vnaFlights.length > 0) {
             setFlights(prev => [...prev, ...vnaFlights]);
             setTimeout(() => playNotificationSound(), 200);
@@ -1106,6 +1106,7 @@ export default function Index() {
           )}
           {selectedFlight?.airline === 'VNA' && (
             <VNABookingModal
+              selectedFlight={selectedFlight}
               isOpen={showVNABookingModal}
               onClose={() => {
                 setShowVNABookingModal(false);
