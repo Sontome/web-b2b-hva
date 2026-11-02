@@ -1,5 +1,20 @@
 import { format } from 'date-fns';
 import type { MultiCityFlight } from '@/services/vnaMultiCityApi';
+import type { Flight } from '@/services/flightApi';
+
+export function vnaBookingFlight(flight: Flight): MultiCityFlight {
+  const itinerary = flight.vnaItinerary;
+  if (!itinerary) throw new Error('Vui lòng tìm lại vé VNA để giữ vé');
+  return {
+    id: flight.id, price: flight.price, availableSeats: flight.availableSeats, baggageType: flight.baggageType,
+    listItinerary: { ...itinerary },
+    legs: [...itinerary.chiều_đi, ...(itinerary.chiều_về ?? [])].map((s, index) => ({
+      index: index + 1, flightNumber: s.số_hiệu_máy_bay, ticketClass: s.loại_vé,
+      from: s.nơi_đi, to: s.nơi_đến, departureDate: s.ngày_cất_cánh, departureTime: s.giờ_cất_cánh,
+      arrivalDate: s.ngày_hạ_cánh, arrivalTime: s.giờ_hạ_cánh, stops: 0,
+    })),
+  };
+}
 
 export interface VnaFormPassenger {
   Họ: string;
@@ -43,6 +58,8 @@ export function buildVnaBookingV3(flight: MultiCityFlight, passengers: VnaFormPa
     const [d, m, y] = leg.departureDate.split('/').map(Number);
     const date = new Date(Date.UTC(y, m - 1, d));
     if (!/^\d{2}\/\d{2}\/\d{4}$/.test(leg.departureDate) || date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) throw new Error('Ngày bay không hợp lệ');
+    // V5 OW/RT must be sent untouched, not converted into MD legs.
+    if (Array.isArray(itinerary.chiều_đi)) continue;
     const key = `chặng_${leg.index}`;
     const raw = itinerary[key];
     itinerary[key] = {
