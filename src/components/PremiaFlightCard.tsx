@@ -10,7 +10,7 @@ const fmtKRW = new Intl.NumberFormat('ko-KR');
 export const premiaBaggageLine = (code?: string): string => {
   const c = (code || '').trim().toUpperCase();
   if (c === 'YS') return 'Premia 10kg xách tay, 46kg ký gửi';
-  return 'Premia 10kg xách tay, 30kg ký gửi';
+  return 'Premia 10kg xách tay, 38kg ký gửi';
 };
 
 export const calcPremiaFinalPrice = (
