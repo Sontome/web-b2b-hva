@@ -122,6 +122,27 @@ export type Database = {
         }
         Relationships: []
       }
+      blacklist_mail_queue_care: {
+        Row: {
+          created_at: string
+          email: string
+          id: number
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: number
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: number
+          reason?: string | null
+        }
+        Relationships: []
+      }
       domain_config: {
         Row: {
           config_json: Json
@@ -553,6 +574,225 @@ export type Database = {
           type?: number | null
           updated_at?: string | null
           worker_token?: string | null
+        }
+        Relationships: []
+      }
+      mail_queue_care: {
+        Row: {
+          airline: string
+          attempts: number
+          claim_token: string | null
+          created_at: string
+          customer_name: string | null
+          day1: string | null
+          day2: string | null
+          day3: string | null
+          day4: string | null
+          email: string | null
+          id: string
+          kakao_done: boolean
+          kakao_response: Json | null
+          kakao_status: string | null
+          last_error: string | null
+          lease_until: string | null
+          leg_key: string | null
+          phone: string | null
+          pnr: string
+          salutation: string | null
+          send_after: string
+          skip_mail: boolean
+          smtp_started_at: string | null
+          status: string
+          ticket_sent_at: string | null
+          time1: string | null
+          time2: string | null
+          time3: string | null
+          time4: string | null
+          trip1: string | null
+          trip2: string | null
+          trip3: string | null
+          trip4: string | null
+          type_care: string
+          updated_at: string
+        }
+        Insert: {
+          airline: string
+          attempts?: number
+          claim_token?: string | null
+          created_at?: string
+          customer_name?: string | null
+          day1?: string | null
+          day2?: string | null
+          day3?: string | null
+          day4?: string | null
+          email?: string | null
+          id?: string
+          kakao_done?: boolean
+          kakao_response?: Json | null
+          kakao_status?: string | null
+          last_error?: string | null
+          lease_until?: string | null
+          leg_key?: string | null
+          phone?: string | null
+          pnr: string
+          salutation?: string | null
+          send_after?: string
+          skip_mail?: boolean
+          smtp_started_at?: string | null
+          status?: string
+          ticket_sent_at?: string | null
+          time1?: string | null
+          time2?: string | null
+          time3?: string | null
+          time4?: string | null
+          trip1?: string | null
+          trip2?: string | null
+          trip3?: string | null
+          trip4?: string | null
+          type_care: string
+          updated_at?: string
+        }
+        Update: {
+          airline?: string
+          attempts?: number
+          claim_token?: string | null
+          created_at?: string
+          customer_name?: string | null
+          day1?: string | null
+          day2?: string | null
+          day3?: string | null
+          day4?: string | null
+          email?: string | null
+          id?: string
+          kakao_done?: boolean
+          kakao_response?: Json | null
+          kakao_status?: string | null
+          last_error?: string | null
+          lease_until?: string | null
+          leg_key?: string | null
+          phone?: string | null
+          pnr?: string
+          salutation?: string | null
+          send_after?: string
+          skip_mail?: boolean
+          smtp_started_at?: string | null
+          status?: string
+          ticket_sent_at?: string | null
+          time1?: string | null
+          time2?: string | null
+          time3?: string | null
+          time4?: string | null
+          trip1?: string | null
+          trip2?: string | null
+          trip3?: string | null
+          trip4?: string | null
+          type_care?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mail_queue_care_log: {
+        Row: {
+          airline: string | null
+          attachments_count: number
+          attempts: number | null
+          customer_name: string | null
+          day1: string | null
+          day2: string | null
+          day3: string | null
+          day4: string | null
+          email: string | null
+          finished_at: string
+          id: string
+          kakao_response: Json | null
+          kakao_status: string | null
+          leg_key: string | null
+          mail_error: string | null
+          mail_message_id: string | null
+          mail_status: string
+          phone: string | null
+          pnr: string
+          queue_id: string | null
+          queued_at: string | null
+          salutation: string | null
+          ticket_sent_at: string | null
+          time1: string | null
+          time2: string | null
+          time3: string | null
+          time4: string | null
+          trip1: string | null
+          trip2: string | null
+          trip3: string | null
+          trip4: string | null
+          type_care: string | null
+        }
+        Insert: {
+          airline?: string | null
+          attachments_count?: number
+          attempts?: number | null
+          customer_name?: string | null
+          day1?: string | null
+          day2?: string | null
+          day3?: string | null
+          day4?: string | null
+          email?: string | null
+          finished_at?: string
+          id?: string
+          kakao_response?: Json | null
+          kakao_status?: string | null
+          leg_key?: string | null
+          mail_error?: string | null
+          mail_message_id?: string | null
+          mail_status: string
+          phone?: string | null
+          pnr: string
+          queue_id?: string | null
+          queued_at?: string | null
+          salutation?: string | null
+          ticket_sent_at?: string | null
+          time1?: string | null
+          time2?: string | null
+          time3?: string | null
+          time4?: string | null
+          trip1?: string | null
+          trip2?: string | null
+          trip3?: string | null
+          trip4?: string | null
+          type_care?: string | null
+        }
+        Update: {
+          airline?: string | null
+          attachments_count?: number
+          attempts?: number | null
+          customer_name?: string | null
+          day1?: string | null
+          day2?: string | null
+          day3?: string | null
+          day4?: string | null
+          email?: string | null
+          finished_at?: string
+          id?: string
+          kakao_response?: Json | null
+          kakao_status?: string | null
+          leg_key?: string | null
+          mail_error?: string | null
+          mail_message_id?: string | null
+          mail_status?: string
+          phone?: string | null
+          pnr?: string
+          queue_id?: string | null
+          queued_at?: string | null
+          salutation?: string | null
+          ticket_sent_at?: string | null
+          time1?: string | null
+          time2?: string | null
+          time3?: string | null
+          time4?: string | null
+          trip1?: string | null
+          trip2?: string | null
+          trip3?: string | null
+          trip4?: string | null
+          type_care?: string | null
         }
         Relationships: []
       }
@@ -1676,6 +1916,154 @@ export type Database = {
         Returns: boolean
       }
       mq_sync_claimed_batch: { Args: { p_claims: Json }; Returns: number }
+      mqc_airline_code: { Args: { h: string }; Returns: string }
+      mqc_archive: {
+        Args: {
+          p_attachments: number
+          p_error: string
+          p_mail_status: string
+          p_message_id: string
+          p_row: Database["public"]["Tables"]["mail_queue_care"]["Row"]
+        }
+        Returns: undefined
+      }
+      mqc_care_candidates: {
+        Args: {
+          p_lookback_days?: number
+          p_send_hour?: number
+          p_today?: string
+          p_tz?: string
+        }
+        Returns: {
+          airline: string
+          care_type: string
+          customer_name: string
+          day1: string
+          day2: string
+          day3: string
+          day4: string
+          email: string
+          phone: string
+          pnr: string
+          salutation: string
+          send_after: string
+          skip_mail: boolean
+          ticket_sent_at: string
+          time1: string
+          time2: string
+          time3: string
+          time4: string
+          trip1: string
+          trip2: string
+          trip3: string
+          trip4: string
+        }[]
+      }
+      mqc_claim: {
+        Args: { p_lease_seconds?: number }
+        Returns: {
+          airline: string
+          attempts: number
+          claim_token: string | null
+          created_at: string
+          customer_name: string | null
+          day1: string | null
+          day2: string | null
+          day3: string | null
+          day4: string | null
+          email: string | null
+          id: string
+          kakao_done: boolean
+          kakao_response: Json | null
+          kakao_status: string | null
+          last_error: string | null
+          lease_until: string | null
+          leg_key: string | null
+          phone: string | null
+          pnr: string
+          salutation: string | null
+          send_after: string
+          skip_mail: boolean
+          smtp_started_at: string | null
+          status: string
+          ticket_sent_at: string | null
+          time1: string | null
+          time2: string | null
+          time3: string | null
+          time4: string | null
+          trip1: string | null
+          trip2: string | null
+          trip3: string | null
+          trip4: string | null
+          type_care: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "mail_queue_care"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      mqc_enqueue_daily: {
+        Args: {
+          p_lookback_days?: number
+          p_send_hour?: number
+          p_today?: string
+          p_tz?: string
+        }
+        Returns: {
+          care_type: string
+          inserted: number
+          kakao_only: number
+        }[]
+      }
+      mqc_finish: {
+        Args: {
+          p_attachments: number
+          p_error: string
+          p_id: string
+          p_mail_status: string
+          p_message_id: string
+          p_token: string
+        }
+        Returns: boolean
+      }
+      mqc_leg_key: { Args: { day: string; trip: string }; Returns: string }
+      mqc_mark_smtp_started: {
+        Args: { p_id: string; p_token: string }
+        Returns: boolean
+      }
+      mqc_norm_day: { Args: { d: string }; Returns: string }
+      mqc_recover: {
+        Args: { p_limit?: number; p_max_attempts?: number }
+        Returns: {
+          outcome: string
+          pnr: string
+          queue_id: string
+          type_care: string
+        }[]
+      }
+      mqc_release: {
+        Args: {
+          p_error: string
+          p_id: string
+          p_max_attempts: number
+          p_retry_seconds: number
+          p_token: string
+        }
+        Returns: string
+      }
+      mqc_safe_date: { Args: { d: string }; Returns: string }
+      mqc_set_kakao: {
+        Args: {
+          p_id: string
+          p_response: Json
+          p_status: string
+          p_token: string
+        }
+        Returns: boolean
+      }
       run_add_email_ape_sun_worker: { Args: never; Returns: undefined }
       sync_kakanoti_phone_sent: { Args: never; Returns: undefined }
       update_kakanoti_row_sent: { Args: never; Returns: number }
