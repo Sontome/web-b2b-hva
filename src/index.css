@@ -38,6 +38,11 @@ All colors MUST be HSL.
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+    --care-page: 210 80% 97%;
+    --care-pending: 43 90% 35%;
+    --care-sending: 212 75% 43%;
+    --care-success: 145 65% 30%;
+    --care-uncertain: 28 90% 38%;
     --promo-active: 145 65% 30%;
     --promo-upcoming: 210 75% 42%;
     --promo-expired: 30 90% 38%;
@@ -60,6 +65,11 @@ All colors MUST be HSL.
   }
 
   .dark {
+    --care-page: 222 30% 10%;
+    --care-pending: 43 90% 70%;
+    --care-sending: 212 75% 72%;
+    --care-success: 145 65% 65%;
+    --care-uncertain: 28 90% 70%;
     --background: 222.2 84% 4.9%;
     --promo-active: 145 65% 65%;
     --promo-upcoming: 210 75% 72%;
@@ -167,6 +177,13 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
+  .care-page { background: hsl(var(--care-page)); }
+  .care-status { white-space: nowrap; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
+  .care-pending { color: hsl(var(--care-pending)); background: hsl(var(--care-pending) / .12); border-color: hsl(var(--care-pending) / .3); }
+  .care-sending { color: hsl(var(--care-sending)); background: hsl(var(--care-sending) / .12); border-color: hsl(var(--care-sending) / .3); }
+  .care-sent { color: hsl(var(--care-success)); background: hsl(var(--care-success) / .12); border-color: hsl(var(--care-success) / .3); }
+  .care-failed { color: hsl(var(--destructive)); background: hsl(var(--destructive) / .12); border-color: hsl(var(--destructive) / .3); }
+  .care-uncertain { color: hsl(var(--care-uncertain)); background: hsl(var(--care-uncertain) / .12); border-color: hsl(var(--care-uncertain) / .3); }
   .promo-status-active { color: hsl(var(--promo-active)); border-color: hsl(var(--promo-active) / 0.3); background: hsl(var(--promo-active) / 0.08); }
   .promo-status-upcoming { color: hsl(var(--promo-upcoming)); border-color: hsl(var(--promo-upcoming) / 0.3); background: hsl(var(--promo-upcoming) / 0.08); }
   .promo-status-expired { color: hsl(var(--promo-expired)); border-color: hsl(var(--promo-expired) / 0.3); background: hsl(var(--promo-expired) / 0.08); }
