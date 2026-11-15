@@ -635,6 +635,22 @@ export const AdminDashboard = () => {
             </CardContent>
           </Card>
 
+          {profile?.role === 'admin' && <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate('/admin/mail-care')}
+            role="link" tabIndex={0}
+            onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate('/admin/mail-care'); } }}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Mail Chăm Sóc</CardTitle>
+              <Mail className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Quản lý</div>
+              <p className="text-xs text-muted-foreground">Theo dõi hàng đợi và báo cáo gửi email chăm sóc khách hàng.</p>
+            </CardContent>
+          </Card>}
+
           <Card
             className="cursor-pointer hover:shadow-lg transition-shadow"
             onClick={() => navigate('/admin/customer-flights')}
