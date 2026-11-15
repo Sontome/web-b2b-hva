@@ -22,6 +22,7 @@ import TicketRules from "./pages/TicketRules";
 import MailCenter from "./pages/MailCenter";
 import CustomerFlights from "./pages/CustomerFlights";
 import Promocodes from "./pages/Promocodes";
+import MailCare from "./pages/MailCare";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/admin/mail-center" element={<ProtectedRoute><MailCenter /></ProtectedRoute>} />
             <Route path="/admin/customer-flights" element={<ProtectedRoute><CustomerFlights /></ProtectedRoute>} />
             <Route path="/admin/promocodes" element={<ProtectedRoute><Promocodes /></ProtectedRoute>} />
+            <Route path="/admin/mail-care" element={<ProtectedRoute><MailCare /></ProtectedRoute>} />
             <Route path="/cart" element={
               <ProtectedRoute>
                 <HeldTickets />
